@@ -16,8 +16,10 @@ function varargout = pathAnalyzeGUI(varargin)
 % CELINE MATEO change to get the mirror voltage = to 2.5 V for Rig 2 this
 % is found in the PATH GUI FILE
 %
-%
-% 2015-11-19 PABLO BLINDER implemented analysis of tiff instead of mpd
+% PB - implemented analysis of tiff instead of mpd
+% PB - implemented support of parallel processing (parfor)
+% 2015-11-19 PABLO BLINDER 
+
 
 % Last Modified by GUIDE v2.5 18-Nov-2015 15:40:47
 
