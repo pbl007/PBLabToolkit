@@ -234,6 +234,7 @@ set(handles.listboxScanCoords,'String',cellstr(strmat));
 set(handles.figure1,'CurrentAxes',handles.axesSingleFrame)
 imagesc(handles.scanDataLines100.Im)
 colormap('gray')
+grid off
 
 % draw a projection, in axesSingleFrameProjection
 set(handles.figure1,'CurrentAxes',handles.axesSingleFrameProjection)
@@ -251,6 +252,7 @@ for iOBJ = 1 : nObj
     x = find(handles.scanData.pathObjNum==iOBJ);max(x)
     rectangle('Position', [x(1) yLim(1) x(end)-x(1) 5],'FaceColor',map(iOBJ,:));
 end%creating objects
+grid off
 
 
 % make sure the dt in the .mat is the same as in the .MPD ...
@@ -412,10 +414,9 @@ markIntensity = max(imMarked(:)) * 1.1;
 for i = 1:nPoints
     c = round(pathImCoords(i,1));   %jd - note c comes before r!
     r = round(pathImCoords(i,2));
-    
-    imMarked(r,c) = markIntensity;
-    
-    sr1im(i) = handles.scanData.im(r,c);
+    if ~isnan(r);imMarked(r,c) = markIntensity;
+        sr1im(i) = handles.scanData.im(r,c);
+    end %nan in cropped files - by definitions PB
 end
 
 % scale so that data from image matches data acquired from arbs scan ... generally not needed
@@ -477,6 +478,7 @@ set(handles.figure1,'CurrentAxes',handles.axesSingleFrame)
 imagesc(im)
 colormap('gray')
 hold on
+grid off
 
 ymax = size(im,1);
 
@@ -869,3 +871,55 @@ function pushbutton_CropScan_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_CropScan (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+%
+%crop tif data to keep only linear portion of scan - 
+
+cropLineSep_pxl = 10; %separate retion by this much
+arbScanFullFileName =  fullfile(handles.fileDirectory,handles.fileNameArbData);
+matFullFineName =  fullfile(handles.fileDirectory,handles.fileNameMat);
+croppedTifFullFileName = [arbScanFullFileName(1:end-4) '-cropped' arbScanFullFileName(end-3:end)]
+croppedArbScanMatFileName = [matFullFineName(1:end-4) '-cropped' matFullFineName(end-3:end)]
+
+
+%%
+switch handles.fileExt
+    case 'mpd'
+        warndlg('Inplemented for tif only files');
+        return
+    case 'tif'
+        scanDataCrop = handles.scanData
+        %figure out how many arb scan objects to keep AND their # of pixels
+        nObj = max(handles.scanData.pathObjNum);
+        objStart=zeros(nObj,1);
+        objEnd=zeros(nObj,1);
+        for iOBJ = 1 : nObj
+            objStart(iOBJ) = find(handles.scanData.pathObjNum==iOBJ,1,'first');
+            objEnd(iOBJ) = find(handles.scanData.pathObjNum==iOBJ,1,'last');
+        end
+        objNumPxl = objEnd - objStart + 1;
+        %crop - number of columns is the only thing that changes
+        croppedNumCol = sum(objNumPxl+cropLineSep_pxl*(nObj-1));
+        croppedTif = zeros(handles.dataTif.nRows,croppedNumCol,handles.dataTif.nFrames,'uint16');
+        scanDataCrop.pathObjNum = zeros(1,croppedNumCol);
+        scanDataCrop.pathObjSubNum = zeros(1,croppedNumCol);
+        scanDataCrop.path = NaN(croppedNumCol,2);
+        pxlOffset = 0;
+        for iOBJ = 1 : nObj
+            croppedPxlIds = (1:objNumPxl(iOBJ))+pxlOffset;
+            scanDataCrop.pathObjNum(croppedPxlIds) = handles.scanData.pathObjNum(objStart(iOBJ):objEnd(iOBJ));
+            scanDataCrop.pathObjSubNum(croppedPxlIds) = handles.scanData.pathObjSubNum(objStart(iOBJ):objEnd(iOBJ));
+            scanDataCrop.path(croppedPxlIds,:) = handles.scanData.path(objStart(iOBJ):objEnd(iOBJ),:);
+            pxlOffset = croppedPxlIds(end) + cropLineSep_pxl;
+            subVol = struct('R',[1 handles.dataTif.nRows],'C',[objStart(iOBJ) objEnd(iOBJ)],'Z',[1 handles.dataTif.nFrames]);
+            croppedTif(:,croppedPxlIds,:) = flextiffread(arbScanFullFileName,subVol);
+        end
+           
+end
+%%
+
+scanData = scanDataCrop;
+save (croppedArbScanMatFileName,'scanData')
+maketiff(croppedTif,croppedTifFullFileName);
+
+
+
