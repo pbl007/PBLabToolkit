@@ -21,7 +21,7 @@ function varargout = pathAnalyzeGUI(varargin)
 % 2015-11-19 PABLO BLINDER 
 
 
-% Last Modified by GUIDE v2.5 18-Nov-2015 15:40:47
+% Last Modified by GUIDE v2.5 22-Nov-2015 22:03:04
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -920,6 +920,3 @@ end
 scanData = scanDataCrop;
 save (croppedArbScanMatFileName,'scanData')
 maketiff(croppedTif,croppedTifFullFileName);
-
-
-
