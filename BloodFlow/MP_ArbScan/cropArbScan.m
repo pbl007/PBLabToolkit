@@ -32,7 +32,7 @@ for iOBJ = 1 : nObj
 end
 objNumPxl = objEnd - objStart + 1;
 %crop - number of columns is the only thing that changes
-croppedNumCol = sum(objNumPxl+cropLineSep_pxl*(nObj-1));
+croppedNumCol = sum(objNumPxl)+cropLineSep_pxl*(nObj-1);
 croppedTif = zeros(dataTif.nRows,croppedNumCol,dataTif.nFrames,'uint16');
 scanDataCrop.pathObjNum = zeros(1,croppedNumCol);
 scanDataCrop.pathObjSubNum = zeros(1,croppedNumCol);
@@ -51,7 +51,7 @@ end
 %%
 scanData = scanDataCrop;
 if options.doUpdateTifName
-    strPos = regexp(croppedTifFullFileName,'\w-cropped')
+    strPos = regexp(croppedTifFullFileName,'\w-cropped');
     croppedTifFullFileName=[matFullFileName(1:end-4) croppedTifFullFileName(strPos+1:end)];
 end
 save (croppedArbScanMatFileName,'scanData')
@@ -63,14 +63,14 @@ if options.doMakeThumb
     figure('name',croppedArbScanMatFileName)
     subplot(1,2,1)
     h2a1 = gca;
-        imagesc(scanData.axisLimCol,scanData.axisLimRow,scanData.im);
+    imagesc(scanData.axisLimCol,scanData.axisLimRow,scanData.im);
     axis image
     colormap gray
     
     subplot(1,2,2)
     h2a2 = gca;
     imagesc(croppedTif(:,:,1))
-
+    
     nObj = max(scanData.pathObjNum);
     yLim = get(gca,'Ylim');
     map = jet(nObj);
@@ -114,6 +114,6 @@ if options.doMakeThumb
     end%creating objects
     
     thumbFileName = croppedArbScanMatFileName(1:end-4);
-    saveas(gcf,thumbFileName,'pdf')
+    export_fig (thumbFileName);
 end
 

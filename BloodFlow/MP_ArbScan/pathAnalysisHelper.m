@@ -178,6 +178,15 @@ end
 
 %% post-processing, if necessary
 
+%here we assign variable to the base workspace. Check if we need to clean up workspace before hand, needed to save to
+%separated files in multi datasets called from "analyze later"
+
+if isfield(analysisObject,'cleanWorkspace')
+   if analysisObject.cleanWorkspace
+       evalin('base','clear all')
+   end
+end
+
 if strcmp(analysisType,'radon')
     % convert this to a more usable form
     %   (timePerLine) holds vertical spacing info
@@ -214,6 +223,12 @@ disp ' ... done'
 % make a time axis that matcheds the diameter info
 time_axis = windowSize/2 + windowStep*(0:length(analysisData)-1);
 assignin('base',[assignName '_time_axis'],time_axis);
+
+%% check if need to store results in file - used when processing multiple request from "analyze later" in pathAnalyzeGui
+if isfield (analysisObject ,'save2fileName')
+    cmd = sprintf('save(''%s'')',analysisObject.save2fileName);
+    evalin('base',cmd);
+end
 
 %%
 % finally, made sure the hidden file (opened when the analysis was run)

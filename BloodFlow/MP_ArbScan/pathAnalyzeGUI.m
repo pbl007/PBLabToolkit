@@ -64,9 +64,15 @@ handles.imageCh = 1;              % holds imaging channel to load
 handles.analyseLater = false;
 handles.analyseLaterFilename = '';     % fid to write structures to analyse later
 handles.analyseLaterIndex = 0;         % not currently used
+handles.analyseLaterLastLoadedMatFile = ''; %PB - every time this changes, we tell the analyze later to flag for storing results (in helper) to separate mat file RES_xxxx.mat
+
 
 %mjp 2011.05.02
 set(gcf,'name','pathAnalyzeExtraGUI v0.3')
+
+%pb 2015.11.15
+set(gcf,'name','pathAnalyzeExtraGUI v1.0(PBlab)')
+
 
 guidata(hObject, handles); % Update handles structure
 
@@ -543,12 +549,15 @@ dataStruct = struct( ...
     'windowStep',handles.windowStep,...
     'analysisType','diameter', ...
     'scanVelocity',handles.scanData.scanVelocity, ...
-    'imageCh',handles.imageCh);
+    'imageCh',handles.imageCh,...
+    'dt',handles.scanData.dt);
 
 if isfield(handles,'dataTif')
     dataStruct.dataTif = handles.dataTif;
     dataStruct.dt = handles.scanData.dt;
 end
+
+
 
 if handles.analyseLater
     writeForLater(dataStruct,handles);
@@ -590,6 +599,7 @@ if isfield(handles,'dataTif')
     dataStruct.dt = handles.scanData.dt;
 end
 
+
 if handles.analyseLater
     writeForLater(dataStruct,handles);
 else
@@ -628,6 +638,7 @@ if isfield(handles,'dataTif')
     dataStruct.dataTif = handles.dataTif;
     dataStruct.dt = handles.scanData.dt;
 end
+
 
 if handles.analyseLater
     writeForLater(dataStruct,handles);
@@ -778,8 +789,11 @@ editWindowStepMs_Callback(hObject, eventdata, handles)   % execute, to read init
 
 % --- BUTTON - Analyse Stored Selections
 function pushButtonAnalyseStoredSelections_Callback(hObject, eventdata, handles)
-% not curretly used
-return;
+%implemented by PB
+%the analyze later funcitonality creates an m file which generates an analysis object, run it first then execute 
+evalin('base','clear all');
+evalin('base',sprintf('run(''%s'')',fullfile(handles.fileDirectory,handles.analyseLaterFilename)))
+evalin('base','pathAnalysisHelper(dataStructArray)')
 
 % --- CHECKBOX - Queue Values (analyse later.
 function checkboxQueueValues_Callback(hObject, eventdata, handles)
@@ -825,14 +839,30 @@ fprintf(fid,[' ''windowSize'',' num2str(dataStruct.windowSize) ', ...\n'],'char'
 fprintf(fid,[' ''windowStep'',' num2str(dataStruct.windowStep) ', ...\n'],'char');
 fprintf(fid,[' ''analysisType'',' '''' dataStruct.analysisType '''' ', ...\n'],'char');
 fprintf(fid,[' ''scanVelocity'',' num2str(dataStruct.scanVelocity) ', ...\n'],'char');
-fprintf(fid,[' ''imageCh'',' num2str(dataStruct.imageCh) ' ...\n'],'char');
-fprintf(fid,');\n');
+fprintf(fid,[' ''imageCh'',' num2str(dataStruct.imageCh) ', ...\n'],'char');
+fprintf(fid,[' ''dt'',' num2str(handles.scanData.dt) ' ...\n'],'char');
 
+fprintf(fid,');\n');
+%added by PB
+fprintf(fid,'dataStruct.dataTif = struct(''nRows'',%d,''nCols'',%d,''nFrames'',%d);\n',handles.dataTif.nRows,handles.dataTif.nCols,handles.dataTif.nFrames);
+fprintf(fid,'dataStruct.save2fileName = ''RES_%s'';\n',handles.fileNameMat);
+
+fprintf('last=%s\tcurrent = %s\n',handles.analyseLaterLastLoadedMatFile,handles.fileNameMat);
+if strcmp(handles.analyseLaterLastLoadedMatFile, handles.fileNameMat);
+    %same file names means we didn't load a different data set so instruct helper to keep workspace variables
+fprintf(fid,'dataStruct.cleanWorkspace = %d;\n',0);
+else
+    %different so helper needs to clean up before starting analysis, we also update last file flag
+    handles.analyseLaterLastLoadedMatFile = handles.fileNameMat;
+    fprintf(fid,'dataStruct.cleanWorkspace = %d;\n',1);
+
+end
 fprintf(fid,'dataStructArray = [dataStructArray dataStruct];\n');
 
 fprintf(fid,'\n');
 
 fclose(fid);
+guidata(handles.figure1, handles);                                   % Update handles structure
 
 
 % --- Executes on selection change in popUpChannel.
@@ -877,8 +907,8 @@ function pushbutton_CropScan_Callback(hObject, eventdata, handles)
 cropLineSep_pxl = 10; %separate retion by this much
 arbScanFullFileName =  fullfile(handles.fileDirectory,handles.fileNameArbData);
 matFullFineName =  fullfile(handles.fileDirectory,handles.fileNameMat);
-croppedTifFullFileName = [arbScanFullFileName(1:end-4) '-cropped' arbScanFullFileName(end-3:end)]
-croppedArbScanMatFileName = [matFullFineName(1:end-4) '-cropped' matFullFineName(end-3:end)]
+croppedTifFullFileName = [arbScanFullFileName(1:end-4) '-cropped' arbScanFullFileName(end-3:end)];
+croppedArbScanMatFileName = [matFullFineName(1:end-4) '-cropped' matFullFineName(end-3:end)];
 
 
 %%
