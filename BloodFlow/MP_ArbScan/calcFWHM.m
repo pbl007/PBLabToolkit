@@ -3,11 +3,6 @@ function width = calcFWHM(data,smoothing,threshold)
 % half-max values are found looking in from the sides, i.e., the program will work
 % even if the data dips to a lower value in the middle
 
-if useGPU
-    data = gpuArray( double(data));
-else
-    data=double(data);
-end
 
 % smooth data, if appropriate
 if nargin < 2
