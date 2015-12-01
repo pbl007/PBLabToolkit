@@ -21,7 +21,7 @@ function varargout = pathAnalyzeGUI(varargin)
 % 2015-11-19 PABLO BLINDER 
 
 
-% Last Modified by GUIDE v2.5 22-Nov-2015 22:03:04
+% Last Modified by GUIDE v2.5 29-Nov-2015 15:50:38
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -118,7 +118,7 @@ cd(handles.fileDirectory)
 function pushButtonLoadData_Callback(hObject, eventdata, handles)
 
 %PB - let user choose file, then selecte data type based on file extension
-supportedFileTypes = {'*.mpd';'*.tif'};
+supportedFileTypes = {'*.tif';'*.mpd'};
 [handles.fileNameArbData,handles.fileDirectory,handles.fileExt] = uigetfile(supportedFileTypes,'open file - MpScan (*.mpd) or *.tif',handles.fileDirectory); % open file
 if isequal(handles.fileExt,0)   % check to make sure a file was selected
     return
@@ -171,6 +171,10 @@ guidata(hObject, handles);
 % --- BUTTON - Initialize
 function pushButtonInitialize_Callback(hObject, eventdata, handles)
 
+if ~isfield(handles,'fileExt')
+    warndlg( 'oops, you have to load data first ...')
+    return
+end
 
 switch handles.fileExt
     case 'mpd'
@@ -227,6 +231,12 @@ if size(sr1,1) ~= size(path,1)
     warndlg( 'oops - path length from matlab and MPD file do not match!')
     return
 end
+
+if isempty( get(handles.edit_imageMicronToPixelRatio,'String'))
+    warndlg( 'oops, you must provide a micron to pixel convertion ...')
+    return
+end
+
 
 %%% populate listbox
 strmat = [];
@@ -289,15 +299,18 @@ handles.timePerLine = handles.nPointsPerLine * handles.scanData.dt;
 set(handles.minWin,'String',...
     num2str(round(handles.timePerLine*1e4)/10));
 
+
+handles.um2pxRatio = str2num(get(handles.edit_imageMicronToPixelRatio,'String'));
+
 % display some stuff for the user ...
 clc
 fprintf('%s',repmat('-',80,1));
-disp(['  total scan time (s): ' num2str(handles.nPoints * handles.scanData.dt)])
-disp(['  time per line (ms): ' num2str(handles.nPointsPerLine * handles.scanData.dt * 1000)])
-disp(['  scan frequency (Hz): ' num2str(1 / (handles.nPointsPerLine * handles.scanData.dt))])
-disp(['  distance between pixels (in ROIs) (mV): ' num2str(handles.scanData.scanVelocity *1e3)])
-disp(['  time between pixels (us): ' num2str(1e6*handles.scanData.dt)])
-
+disp(['  total scan time (s): ' num2str(handles.nPoints * handles.scanData.dt)]);
+disp(['  time per line (ms): ' num2str(handles.nPointsPerLine * handles.scanData.dt * 1000)]);
+disp(['  scan frequency (Hz): ' num2str(1 / (handles.nPointsPerLine * handles.scanData.dt))]);
+disp(['  distance between pixels (in ROIs) (mV): ' num2str(handles.scanData.scanVelocity *1e3)]);
+disp(['  time between pixels (us): ' num2str(1e6*handles.scanData.dt)]);
+disp(['  um to pixel ratio: ' num2str(handles.um2pxRatio)]);
 disp ' '
 disp '  initialize completed successfully '
 % MATEO 20120313 To show the number of frames=total scan time/(time per
@@ -550,7 +563,8 @@ dataStruct = struct( ...
     'analysisType','diameter', ...
     'scanVelocity',handles.scanData.scanVelocity, ...
     'imageCh',handles.imageCh,...
-    'dt',handles.scanData.dt);
+    'dt',handles.scanData.dt,...
+    'um2pxl',handles.um2pxRatio);
 
 if isfield(handles,'dataTif')
     dataStruct.dataTif = handles.dataTif;
@@ -632,7 +646,9 @@ dataStruct = struct( ...
     'windowStep',handles.windowStep,...
     'analysisType','radon', ...
     'scanVelocity',handles.scanData.scanVelocity, ...
-    'imageCh',handles.imageCh);
+    'imageCh',handles.imageCh,...
+    'um2pxl',handles.um2pxRatio);
+
 
 if isfield(handles,'dataTif')
     dataStruct.dataTif = handles.dataTif;
@@ -670,6 +686,10 @@ function pushButtonDrawScanRegions_Callback(hObject, eventdata, handles)
 % note - this code is copied straight from pathGUI, could be a separate function ...
 % plot the start and endpoints on the graph, and place text
 
+%PB - match to colors in data display
+nObj = max(handles.scanData.pathObjNum);
+map = jet(nObj);
+
 for i = 1:length(handles.scanData.scanCoords)
     sc = handles.scanData.scanCoords(i);     % copy to a structure, to make it easier to access
     if strcmp(sc.scanShape,'blank')
@@ -695,7 +715,7 @@ for i = 1:length(handles.scanData.scanCoords)
         
         rectangle('Position',[boxXmin,boxYmin, ...
             boxXmax-boxXmin,boxYmax-boxYmin], ...
-            'EdgeColor','green');
+            'EdgeColor',map(iOBJ,:));
     end
     
     % find a point to place text
@@ -844,6 +864,9 @@ fprintf(fid,[' ''dt'',' num2str(handles.scanData.dt) ' ...\n'],'char');
 
 fprintf(fid,');\n');
 %added by PB
+pxl2mv = size(handles.scanData.im,2)/sum(abs(handles.scanData.axisLimCol))/1000; %compute from number of columns and axisLimCol, convert to mV.
+um2mv = handles.um2pxRatio * pxl2mv;
+fprintf(fid,'dataStruct.um2mv = %f;\n',um2mv);
 fprintf(fid,'dataStruct.dataTif = struct(''nRows'',%d,''nCols'',%d,''nFrames'',%d);\n',handles.dataTif.nRows,handles.dataTif.nCols,handles.dataTif.nFrames);
 fprintf(fid,'dataStruct.save2fileName = ''RES_%s'';\n',handles.fileNameMat);
 
@@ -917,7 +940,7 @@ switch handles.fileExt
         warndlg('Inplemented for tif only files');
         return
     case 'tif'
-        scanDataCrop = handles.scanData
+        scanDataCrop = handles.scanData;
         %figure out how many arb scan objects to keep AND their # of pixels
         nObj = max(handles.scanData.pathObjNum);
         objStart=zeros(nObj,1);
@@ -950,3 +973,40 @@ end
 scanData = scanDataCrop;
 save (croppedArbScanMatFileName,'scanData')
 maketiff(croppedTif,croppedTifFullFileName);
+
+
+% --- Executes on button press in pushbutton_xcorrTransform.
+function pushbutton_xcorrTransform_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_xcorrTransform (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton_RadonTransformFastFlow.
+function pushbutton_RadonTransformFastFlow_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_RadonTransformFastFlow (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+
+function edit_imageMicronToPixelRatio_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_imageMicronToPixelRatio (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_imageMicronToPixelRatio as text
+%        str2double(get(hObject,'String')) returns contents of edit_imageMicronToPixelRatio as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_imageMicronToPixelRatio_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_imageMicronToPixelRatio (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end

@@ -207,11 +207,13 @@ if strcmp(analysisType,'radon')
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_radon_mv_per_s'],speedData);   % mv / second
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_radon_theta'],analysisData);   % degrees from vertical
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_radon_sep'],analysisDataSep);   % degrees from vertical
-    
+    assignin('base',[assignName '_' 'ch' num2str(imageCh) '_radon_um_per_s'],speedData*analysisObject.um2mv);   % um / second
+
 elseif strcmp(analysisType,'diameter')
     analysisData = analysisData * mvPerCol;     % convert units (currently in pixels) to millivolts
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_diameter_mv'],analysisData);   % mv / second
-    
+    assignin('base',[assignName '_' 'ch' num2str(imageCh) '_diameter_um'],analysisData*analysisObject.um2mv);   % um / second
+
 else
     % other analysis, besides radon or diameter (i.e., intensity)
     assignName(assignName == ' ') = '_';                           % change spaces to underscores
