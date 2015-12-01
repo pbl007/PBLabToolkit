@@ -86,7 +86,9 @@ scanResult1d = scanResult1d(:);            % make a column vector
     typicalDiam = scanResult1d(firstIndexThisObject:lastIndexThisObject);
     offset = min(typicalDiam);                           % find the baseline
     threshold = max(typicalDiam - offset) / 2 + offset;  % threshold is half max, taking offset into account
-    
+    %this threshold computation created situations where all points are below threshold due to differences in the min
+    %value after smoothing, force to do a window-by-window FWHM.
+    threshold = [];
     smoothing = 3;          % smooth data before taking width ...
     
     %radon
@@ -162,7 +164,7 @@ parfor i = 1:length(windowStartPoints)
     end
     blockDataMean = mean(blockDataCut);
     if strcmp(analysisType,'diameter')
-        analysisData(i) = calcFWHM(blockDataMean,smoothing,threshold,0);%gpu doesn't really spead up things here
+        analysisData(i) = calcFWHM(blockDataMean,smoothing);%not passing threshold forces computation of local maxima for each window
     elseif strcmp(analysisType,'intensity')
         analysisData(i) = mean(blockDataMean);
     elseif strcmp(analysisType,'radon')

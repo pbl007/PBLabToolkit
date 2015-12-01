@@ -1,4 +1,4 @@
-function width = calcFWHM(data,smoothing,threshold,useGPU)
+function width = calcFWHM(data,smoothing,threshold)
 % function which takes data and calculates the full-width, half max value
 % half-max values are found looking in from the sides, i.e., the program will work
 % even if the data dips to a lower value in the middle
@@ -53,4 +53,3 @@ point1 = firstI-1 + point1offset;
 point2 = lastI + point2offset;
 
 width = point2-point1;
-if useGPU;width = gather(width);end
