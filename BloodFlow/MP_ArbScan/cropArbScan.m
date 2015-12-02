@@ -19,8 +19,11 @@ thisFileInfo = imfinfo(arbScanFullFileName);
 dataTif = struct('nRows',thisFileInfo(1).Height,'nCols',thisFileInfo(1).Width,'nFrames',numel(thisFileInfo));
 
 
-%%
-
+%% keep original path period 
+scanDataCrop.isCropped = 1;%flag downstream functions explicitly
+scanDataCrop.pathPeriod_s = scanData.dt * numel(scanData.pathObjNum);
+scanDataCrop.oriPathLen = size(scanData.path,1);
+scanDataCrop.Note = 'Scan period computed as number of points in original path times dt';
 
 %figure out how many arb scan objects to keep AND their # of pixels
 nObj = max(scanData.pathObjNum);

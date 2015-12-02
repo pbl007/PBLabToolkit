@@ -67,33 +67,49 @@ switch dataType
         scanDataLinesK.Ch1 = flextiffread(fileNameArbData,dataTif.subVol);
         scanResult1d = mean(scanDataLinesK.Ch1);
 end
-%%
-nPointsPerLine = scanDataLinesK.xsize;                        % points (pixels) each scan line
-nLines = scanDataLinesK.num_frames * scanDataLinesK.ysize;    % total number of lines in data
-timePerLine = nPointsPerLine * dt;                            % time spent scanning each line
 
+%%
+if isfield (analysisObject,'isCropped')
+    nPointsPerLine = analysisObject.oriPathLen;                        % points (pixels) each scan line
+    nLines = scanDataLinesK.num_frames * scanDataLinesK.ysize;    % total number of lines in data
+    timePerLine = nPointsPerLine * dt;
+else
+    
+    nPointsPerLine = scanDataLinesK.xsize;                        % points (pixels) each scan line
+    nLines = scanDataLinesK.num_frames * scanDataLinesK.ysize;    % total number of lines in data
+    timePerLine = nPointsPerLine * dt;                            % time spent scanning each line
+end
 % numbers for conversions ...
 %   secondsPerRow is the time it takes to scan each line,
 %   mvPerCol is the pixel spacing over scan regions, in millivolts
 secsPerRow = timePerLine;                                 % in seconds
 mvPerCol = (analysisObject.scanVelocity) * 1e3;           % in mV
-
 scanResult1d = scanResult1d(:);            % make a column vector
 
 %% setup specific to different kinds of analysis, need to set up all for parfor to work
 
 %diameter
-    typicalDiam = scanResult1d(firstIndexThisObject:lastIndexThisObject);
-    offset = min(typicalDiam);                           % find the baseline
-    threshold = max(typicalDiam - offset) / 2 + offset;  % threshold is half max, taking offset into account
-    %this threshold computation created situations where all points are below threshold due to differences in the min
-    %value after smoothing, force to do a window-by-window FWHM.
-    threshold = [];
-    smoothing = 3;          % smooth data before taking width ...
-    
-    %radon
+typicalDiam = scanResult1d(firstIndexThisObject:lastIndexThisObject);
+offset = min(typicalDiam);                           % find the baseline
+threshold = max(typicalDiam - offset) / 2 + offset;  % threshold is half max, taking offset into account
+%this threshold computation created situations where all points are below threshold due to differences in the min
+%value after smoothing, force to do a window-by-window FWHM.
+% threshold = [];
+smoothing = 3;          % smooth data before taking width ...
+
+%radon
 thetaRange = 0:179;
 thetaAccuracy = .05;
+
+%hybrid radon
+showimg = 0;
+saveimg = 0;
+delx = mvPerCol*analysisObject.um2mv;%microns per pixel
+delt = analysisObject.timePerLine_ms;%ms
+
+% hi = nLinesPerBlock as defined below
+lineskip = 1; % this is relevant when anlyzing whole file, not single block
+xrange = [2 lastIndexThisObject-firstIndexThisObject]-1;
 
 %intensity - nothing really
 
@@ -175,18 +191,23 @@ parfor i = 1:length(windowStartPoints)
         % this speeds things up, but can also cause the data to "hang"
         % on incorrect values
         %thetaRange = [theta-10:theta+10];
+    elseif strcmp(analysisType,'hybridvel')
+        %inteface with hybrid alg
+        
+        [ang, ~,~] = hybridvel(blockDataCut,showimg,saveimg,delx,delt,nLinesPerBlock-2,lineskip,xrange,1);
+        analysisData(i) = ang(1,9,3); %speed is returned in ang(1,9,3), mm/s
+        analysisDataSep(i) = ang(1,1,3)%angle in degrees
     end
 end
-
 %% post-processing, if necessary
 
 %here we assign variable to the base workspace. Check if we need to clean up workspace before hand, needed to save to
 %separated files in multi datasets called from "analyze later"
 
 if isfield(analysisObject,'cleanWorkspace')
-   if analysisObject.cleanWorkspace
-       evalin('base','clear all')
-   end
+    if analysisObject.cleanWorkspace
+        evalin('base','clear all')
+    end
 end
 
 if strcmp(analysisType,'radon')
@@ -210,12 +231,16 @@ if strcmp(analysisType,'radon')
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_radon_theta'],analysisData);   % degrees from vertical
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_radon_sep'],analysisDataSep);   % degrees from vertical
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_radon_um_per_s'],speedData*analysisObject.um2mv);   % um / second
-
+    
 elseif strcmp(analysisType,'diameter')
     analysisData = analysisData * mvPerCol;     % convert units (currently in pixels) to millivolts
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_diameter_mv'],analysisData);   % mv / second
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_diameter_um'],analysisData*analysisObject.um2mv);   % um / second
-
+    
+elseif strcmp(analysisType,'hybridvel')
+    assignin('base',[assignName '_' 'ch' num2str(imageCh) '_hybridvel_um_per_s'],analysisData*1000);   % value is in mm/sec
+    assignin('base',[assignName '_' 'ch' num2str(imageCh) '_hybridvel_theta'],analysisDataSep);   % value is in mm/sec
+ 
 else
     % other analysis, besides radon or diameter (i.e., intensity)
     assignName(assignName == ' ') = '_';                           % change spaces to underscores

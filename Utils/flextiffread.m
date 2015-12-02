@@ -94,7 +94,7 @@ else
     %fine lines and create subVolume.
     %     LUT [frameNum lineWithinFrame]
     lineLUT = reshape([ floor(lineIDs'/stkinfo(1).Height+1)  mod(lineIDs',stkinfo(1).Height)],2,2);
-    if lineLUT(1,2)==0;lineLUT(1,2)=1;end
+    if lineLUT(1,2)==0;lineLUT(1,2)=1;lineLUT(2,2)=lineLUT(2,2)+1;end
     if lineLUT(2,2)==0;lineLUT(2,2)=stkinfo(1).Height;end
     
     %there are two cases

@@ -284,16 +284,26 @@ end
         
 end
 
-handles.nPoints = handles.scanDataLines100.xsize ...
-    * handles.scanDataLines100.ysize ...
-    * handles.scanDataLines100.num_frames;
 
 % total number of lines in scanned data
 handles.nLines = handles.scanDataLines100.ysize ...
     * handles.scanDataLines100.num_frames;
 handles.nPointsPerLine = handles.scanDataLines100.xsize;
 
-handles.timePerLine = handles.nPointsPerLine * handles.scanData.dt;
+%PB - cropped files have shorter paths so look at original computed data
+
+if isfield(handles.scanData,'isCropped')
+    handles.timePerLine = handles.scanData.pathPeriod_s;
+    handles.nPoints = handles.scanData.oriPathLen ...
+    * handles.scanDataLines100.ysize ...
+    * handles.scanDataLines100.num_frames;
+else
+    handles.nPoints = handles.scanDataLines100.xsize ...
+    * handles.scanDataLines100.ysize ...
+    * handles.scanDataLines100.num_frames;
+    handles.timePerLine = handles.nPointsPerLine * handles.scanData.dt;%cropped files have shorter paths so look at original computed data
+end
+
 %time_per_line_in_ms_for_display=handles.timePerLine*1000
 %round minimum window duration (or time per line) to tenths of ms
 set(handles.minWin,'String',...
@@ -305,9 +315,10 @@ handles.um2pxRatio = str2num(get(handles.edit_imageMicronToPixelRatio,'String'))
 % display some stuff for the user ...
 clc
 fprintf('%s',repmat('-',80,1));
+fprintf('\n');
 disp(['  total scan time (s): ' num2str(handles.nPoints * handles.scanData.dt)]);
-disp(['  time per line (ms): ' num2str(handles.nPointsPerLine * handles.scanData.dt * 1000)]);
-disp(['  scan frequency (Hz): ' num2str(1 / (handles.nPointsPerLine * handles.scanData.dt))]);
+disp(['  time per line (ms): ' num2str(handles.timePerLine * 1000)]);
+disp(['  scan frequency (Hz): ' num2str(1 / (handles.timePerLine))]);
 disp(['  distance between pixels (in ROIs) (mV): ' num2str(handles.scanData.scanVelocity *1e3)]);
 disp(['  time between pixels (us): ' num2str(1e6*handles.scanData.dt)]);
 disp(['  um to pixel ratio: ' num2str(handles.um2pxRatio)]);
@@ -566,6 +577,15 @@ dataStruct = struct( ...
     'dt',handles.scanData.dt,...
     'um2pxl',handles.um2pxRatio);
 
+pxl2mv = size(handles.scanData.im,2)/sum(abs(handles.scanData.axisLimCol))/1000; %compute from number of columns and axisLimCol, convert to mV.
+um2mv = handles.um2pxRatio * pxl2mv;
+dataStruct.um2mv = um2mv;
+dataStruct.timePerLine_ms = handles.timePerLine * 1000;
+if isfield (handles.scanData,'isCropped')
+    dataStruct.oriPathLen = handles.scanData.oriPathLen;%keep track of
+    dataStruct.isCropped = 1;
+end
+
 if isfield(handles,'dataTif')
     dataStruct.dataTif = handles.dataTif;
     dataStruct.dt = handles.scanData.dt;
@@ -608,6 +628,15 @@ dataStruct = struct( ...
     'scanVelocity',handles.scanData.scanVelocity, ...
     'imageCh',handles.imageCh);
 
+pxl2mv = size(handles.scanData.im,2)/sum(abs(handles.scanData.axisLimCol))/1000; %compute from number of columns and axisLimCol, convert to mV.
+um2mv = handles.um2pxRatio * pxl2mv;
+dataStruct.um2mv = um2mv;
+dataStruct.timePerLine_ms = handles.timePerLine * 1000;
+if isfield (handles.scanData,'isCropped')
+    dataStruct.oriPathLen = handles.scanData.oriPathLen;%keep track of
+    dataStruct.isCropped = 1;
+end
+
 if isfield(handles,'dataTif')
     dataStruct.dataTif = handles.dataTif;
     dataStruct.dt = handles.scanData.dt;
@@ -649,6 +678,15 @@ dataStruct = struct( ...
     'imageCh',handles.imageCh,...
     'um2pxl',handles.um2pxRatio);
 
+
+pxl2mv = size(handles.scanData.im,2)/sum(abs(handles.scanData.axisLimCol))/1000; %compute from number of columns and axisLimCol, convert to mV.
+um2mv = handles.um2pxRatio * pxl2mv;
+dataStruct.um2mv = um2mv;
+dataStruct.timePerLine_ms = handles.timePerLine * 1000;
+if isfield (handles.scanData,'isCropped')
+    dataStruct.oriPathLen = handles.scanData.oriPathLen;%keep track of
+    dataStruct.isCropped = 1;
+end
 
 if isfield(handles,'dataTif')
     dataStruct.dataTif = handles.dataTif;
@@ -812,7 +850,7 @@ function pushButtonAnalyseStoredSelections_Callback(hObject, eventdata, handles)
 %implemented by PB
 %the analyze later funcitonality creates an m file which generates an analysis object, run it first then execute 
 evalin('base','clear all');
-evalin('base',sprintf('run(''%s'')',fullfile(handles.fileDirectory,handles.analyseLaterFilename)))
+evalin('base',sprintf('run(''%s'')',handles.analyseLaterFilename))
 evalin('base','pathAnalysisHelper(dataStructArray)')
 
 % --- CHECKBOX - Queue Values (analyse later.
@@ -829,6 +867,7 @@ if value == true;
     handles.analyseLater = true;
     
     % write the header info
+    handles.analyseLaterFilename = fullfile(handles.fileDirectory,handles.analyseLaterFilename);
     fid = fopen(handles.analyseLaterFilename,'a');
     
     % ... \% escape sequence does not work ... ?
@@ -866,6 +905,13 @@ fprintf(fid,');\n');
 %added by PB
 pxl2mv = size(handles.scanData.im,2)/sum(abs(handles.scanData.axisLimCol))/1000; %compute from number of columns and axisLimCol, convert to mV.
 um2mv = handles.um2pxRatio * pxl2mv;
+fprintf(fid,'dataStruct.oriPathLen = %f;\n',handles.scanData.oriPathLen);
+if isfield (handles.scanData,'isCropped')
+    fprintf(fid,'dataStruct.oriPathLen = %f;\n',handles.scanData.oriPathLen);
+    fprintf(fid,'dataStruct.isCropped = 1;\n');
+end
+
+fprintf(fid,'dataStruct.timePerLine_ms = %f;\n',handles.scanData.pathPeriod_s/1000);
 fprintf(fid,'dataStruct.um2mv = %f;\n',um2mv);
 fprintf(fid,'dataStruct.dataTif = struct(''nRows'',%d,''nCols'',%d,''nFrames'',%d);\n',handles.dataTif.nRows,handles.dataTif.nCols,handles.dataTif.nFrames);
 fprintf(fid,'dataStruct.save2fileName = ''RES_%s'';\n',handles.fileNameMat);
@@ -987,6 +1033,56 @@ function pushbutton_RadonTransformFastFlow_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_RadonTransformFastFlow (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+% Calculate the velocity, using the radon transform
+
+%compute velocity based on the hybrid radon algorithm of Pratik Chhatbar, Kara Lab
+
+elementIndex = get(handles.listboxScanCoords,'Value');    % grab the selected element
+
+% based on the item selected in the listbox, and the pathObjNum, find
+% the start and end indices
+allIndicesThisObject = find(handles.scanData.pathObjNum == elementIndex);
+firstIndexThisObject = allIndicesThisObject(1);
+lastIndexThisObject = allIndicesThisObject(end);
+
+% let the user change the points, if desired
+[firstIndexThisObject lastIndexThisObject] = ...
+    selectLimit(handles,firstIndexThisObject,lastIndexThisObject);
+
+dataStruct = struct( ...
+    'fullFileNameArbData',[handles.fileDirectory handles.fileNameArbData], ...
+    'firstIndexThisObject',firstIndexThisObject, ...
+    'lastIndexThisObject',lastIndexThisObject, ...
+    'assignName',handles.scanData.scanCoords(elementIndex).name, ...
+    'windowSize',handles.windowSize, ...
+    'windowStep',handles.windowStep,...
+    'analysisType','hybridvel', ...
+    'scanVelocity',handles.scanData.scanVelocity, ...
+    'imageCh',handles.imageCh,...
+    'um2pxl',handles.um2pxRatio);
+
+
+pxl2mv = size(handles.scanData.im,2)/sum(abs(handles.scanData.axisLimCol))/1000; %compute from number of columns and axisLimCol, convert to mV.
+um2mv = handles.um2pxRatio * pxl2mv;
+dataStruct.um2mv = um2mv;
+dataStruct.timePerLine_ms = handles.timePerLine * 1000;
+if isfield (handles.scanData,'isCropped')
+    dataStruct.oriPathLen = handles.scanData.oriPathLen;%keep track of
+    dataStruct.isCropped = 1;
+end
+
+
+if isfield(handles,'dataTif')
+    dataStruct.dataTif = handles.dataTif;
+    dataStruct.dt = handles.scanData.dt;
+end
+
+
+if handles.analyseLater
+    writeForLater(dataStruct,handles);
+else
+    pathAnalysisHelper(dataStruct);
+end
 
 
 
