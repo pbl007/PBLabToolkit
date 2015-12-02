@@ -255,7 +255,9 @@ assignin('base',[assignName '_time_axis'],time_axis);
 
 %% check if need to store results in file - used when processing multiple request from "analyze later" in pathAnalyzeGui
 if isfield (analysisObject ,'save2fileName')
-    cmd = sprintf('save(''%s'')',analysisObject.save2fileName);
+    %ensure RES file is save to the same directory 
+    pathstr = fileparts(analysisObject.fullFileNameArbData);
+    cmd = sprintf('save(''%s'')',fullfile(pathstr,analysisObject.save2fileName));
     evalin('base',cmd);
 end
 
