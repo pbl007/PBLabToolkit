@@ -87,7 +87,7 @@ function FolderName = pushbutton1_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 FolderName = uigetdir;
-set(handles.nameOfFolder, 'String', FolderName);
+set(handles.nameOfFolder, 'String', FolderName)
 assignin('base', 'folderOfFiles', FolderName);
 
 % --- Executes on button press in pushbutton2.
@@ -97,7 +97,7 @@ function FileName = pushbutton2_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 FileName = uigetfile('*.lst')
 set(handles.nameOfFile, 'String', FileName);
-assignin('base','FileName',FileName);
+assignin('base','FileName', FileName);
 
 
 % --- Executes on button press in pushbutton3.
