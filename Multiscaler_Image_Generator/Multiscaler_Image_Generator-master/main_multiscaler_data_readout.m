@@ -23,7 +23,7 @@ if useIteration
     helpcell = strfind(myFolderCell(1,:), '.lst');
     listOfListFiles = myFolderCell(1,cellfun(@numel, helpcell) == 1); % Only files that end with .lst
     indexInListFile = 1; % Default is to start from first list file
-    FileName = listOfListFiles{1,indexInListFile}
+    FileName = listOfListFiles{1,indexInListFile};
     
     %% Decide on the number of iterations
     if strcmp(numOfFiles, 'All files')
@@ -103,7 +103,11 @@ while (currentIterationNum <= numOfFiles_int)
 
 CoordinateDeterminer;
 
-%% Saving Results
+%% Create Image 
+
+PhotonSpreadToImage;
+
+%% Save Results
 
 % MySaver;
 

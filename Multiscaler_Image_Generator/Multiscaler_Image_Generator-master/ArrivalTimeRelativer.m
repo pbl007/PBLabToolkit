@@ -22,6 +22,7 @@ RunningIndex = 0;
 
 for m = 1:numel(SteeringTimesArray)-1
     % if a photon arrived later than the next trigger, it should be attributed to the next cycle:
-    RelativePhotonArrivalTime(RunningIndex+1: RunningIndex + numel(RelevantPhotons)) = PhotonTimesArray( (PhotonTimesArray >= SteeringTimesArray(m)) & (PhotonTimesArray < SteeringTimesArray(m+1))) - SteeringTimesArray(m);
+    RelevantPhotons = PhotonTimesArray( (PhotonTimesArray >= SteeringTimesArray(m)) & (PhotonTimesArray < SteeringTimesArray(m+1)));
+    RelativePhotonArrivalTime(RunningIndex+1: RunningIndex + numel(RelevantPhotons)) = RelevantPhotons - SteeringTimesArray(m);
     RunningIndex = RunningIndex + numel(RelevantPhotons);
 end
