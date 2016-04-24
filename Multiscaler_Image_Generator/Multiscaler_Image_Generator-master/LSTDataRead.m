@@ -23,9 +23,14 @@ bitshift = mod(bitshift_cell{1,1}, 100);
 range = range_before_bit_depth * 2^(bitshift);
 
 %% Find the time_patch value
-formatSpec = 'time_patch=%s';
-time_patch_str = textscan(fileID, formatSpec, 'HeaderLines', 45);
-time_patch = cell2mat(time_patch_str{1,1});
+formatSpec = '%s';
+expr = 'time_patch=(\w+)';
+time_patch_cell = cell(0);
+while isempty(time_patch_cell)
+    current_line_cell = textscan(fileID, formatSpec, 1);
+    [time_patch_cell] = regexp(cell2mat(current_line_cell{1,1}), expr, 'tokens');
+end
+time_patch = cell2mat(time_patch_cell{1,1});
 
 %% Reach Data
 formatSpec = '%s';
@@ -47,4 +52,7 @@ switch time_patch
         binary_data = hex2bin(hex_data{1,1}(:,1), 48);
     case '43'
         binary_data = hex2bin(hex_data{1,1}(:,1), 64);
+end
+
+fclose(fileID);
 end

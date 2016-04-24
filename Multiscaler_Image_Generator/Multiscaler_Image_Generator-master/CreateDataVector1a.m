@@ -39,6 +39,16 @@ Time_of_Arrival = Time_of_Arrival_Before_Sweep_Correction(:,1) + (Sweep_Counter(
 
 %% Send out the data table
 Data_Lost = zeros(size(Data_Readings, 1),1); % No data lost bit in this type of file
-Final_Dataset = table(Time_of_Arrival, Sweep_Counter, Data_Lost);
+if size(Data_Readings, 1) == 1
+    cell_help = cell(1, 3);
+    cell_help{1,1} = Time_of_Arrival; cell_help{1,2} = Sweep_Counter; cell_help{1,3} = Data_Lost;
+    Final_Dataset = cell2table(cell_help, 'VariableNames', {'Time_of_Arrival' 'Sweep_Counter' 'Data_Lost'});
+else
+    Final_Dataset = table(Time_of_Arrival, Sweep_Counter, Data_Lost);
+end
 
+%% Add first row of zeros (signaling the first start event which is unrecorded)
+cell_help = cell(1, 3);
+cell_help{1,1} = 0; cell_help{1,2} = 1; cell_help{1,3} = 0;
+Final_Dataset = [cell2table(cell_help, 'VariableNames', {'Time_of_Arrival' 'Sweep_Counter' 'Data_Lost'}); Final_Dataset];
 end
