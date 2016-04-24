@@ -23,7 +23,7 @@ if useIteration
     helpcell = strfind(myFolderCell(1,:), '.lst');
     listOfListFiles = myFolderCell(1,cellfun(@numel, helpcell) == 1); % Only files that end with .lst
     indexInListFile = 1; % Default is to start from first list file
-    FileName = listOfListFiles{1,indexInListFile};
+    FileName = listOfListFiles{1,indexInListFile}
     
     %% Decide on the number of iterations
     if strcmp(numOfFiles, 'All files')
@@ -46,66 +46,39 @@ while (currentIterationNum <= numOfFiles_int)
     %% Time patch choice - create data vector
     switch Time_Patch
         case '32'
-            PMT_Dataset   = CreateDataVector32(Binary_Data, 1, double(Range));
-            Galvo_Dataset = CreateDataVector32(Binary_Data, 2, double(Range));
-            TAG_Dataset   = CreateDataVector32(Binary_Data, 6, double(Range));
+            STOP1_Dataset   = CreateDataVector32(Binary_Data, 1, double(Range));
+            STOP2_Dataset   = CreateDataVector32(Binary_Data, 2, double(Range));
+            START_Dataset   = CreateDataVector32(Binary_Data, 6, double(Range));
 
         case '1a'
-            PMT_Dataset   = CreateDataVector1a(Binary_Data, 1, double(Range));
-            Galvo_Dataset = CreateDataVector1a(Binary_Data, 2, double(Range));
-            TAG_Dataset   = CreateDataVector1a(Binary_Data, 6, double(Range)); 
+            STOP1_Dataset   = CreateDataVector1a(Binary_Data, 1, double(Range));
+            STOP2_Dataset = CreateDataVector1a(Binary_Data, 2, double(Range));
+            START_Dataset   = CreateDataVector1a(Binary_Data, 6, double(Range)); 
 
         case '43'
-            PMT_Dataset   = CreateDataVector43(Binary_Data, 1, double(Range));
-            Galvo_Dataset = CreateDataVector43(Binary_Data, 2, double(Range));
-            TAG_Dataset   = CreateDataVector43(Binary_Data, 6, double(Range));
+            STOP1_Dataset   = CreateDataVector43(Binary_Data, 1, double(Range));
+            STOP2_Dataset = CreateDataVector43(Binary_Data, 2, double(Range));
+            START_Dataset   = CreateDataVector43(Binary_Data, 6, double(Range));
 
         case '2'
-            PMT_Dataset   = CreateDataVector2(Binary_Data, 1, double(Range));
-            Galvo_Dataset = CreateDataVector2(Binary_Data, 2, double(Range));
-            TAG_Dataset   = CreateDataVector2(Binary_Data, 6, double(Range));
+            STOP1_Dataset   = CreateDataVector2(Binary_Data, 1, double(Range));
+            STOP2_Dataset = CreateDataVector2(Binary_Data, 2, double(Range));
+            START_Dataset   = CreateDataVector2(Binary_Data, 6, double(Range));
     end
     fprintf('Data vectors created successfully. \nGenerating image...\n');
-    %% Blubber
-
-    TotalHitsX = [];
-    TotalHitsZ = [];
-
-
-    for SweepNumber = 1:100
-
-        photon_single_sweep = PMT_Dataset((PMT_Dataset.Sweep_Counter == SweepNumber),1);
-        Galvo_single_sweep = Galvo_Dataset((Galvo_Dataset.Sweep_Counter == SweepNumber),1);
-        TAG_single_sweep = TAG_Dataset((TAG_Dataset.Sweep_Counter == SweepNumber),1);
-
-
-        % MaximalGalvoPeriod = max(diff(table2array(Galvo_single_sweep)));
-        % 
-        % [G,P] = meshgrid(single(table2array(Galvo_single_sweep)),single(table2array(photon_single_sweep)));
-        % 
-        % RawRelativePhotonArrivalTime = P-G;
-        % RawRelativePhotonArrivalTime(RawRelativePhotonArrivalTime < 1) = 1e10;
-        % RawRelativePhotonArrivalTime(RawRelativePhotonArrivalTime > MaximalGalvoPeriod) = 1e10;
-        % 
-        % RelativePhotonArrivalTime = min(RawRelativePhotonArrivalTime');
-        % RelativePhotonArrivalTime(RelativePhotonArrivalTime>1e9) = 1;
-
-        X_hits = ArrivalTimeRelativer(Galvo_single_sweep,photon_single_sweep);
-        Z_hits = ArrivalTimeRelativer(TAG_single_sweep,photon_single_sweep);
-
-        TotalHitsX = [TotalHitsX; X_hits];
-        TotalHitsZ = [TotalHitsZ; Z_hits];
-
-    end
-
+   
 
 %% Determine Coordinates
 
-CoordinateDeterminer;
+%CoordinateDeterminer;
+[PhotonCellArray, NumOfLines] = PhotonCells(START_Dataset, STOP1_Dataset, STOP2_Dataset, 1);
 
+%% Here I need to split the cells into frames.%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Create Image 
 
-PhotonSpreadToImage;
+SizeX = 1500;
+SizeY = 150;
+[RawImage, C] = PhotonSpreadToImage2(PhotonCellArray, SizeX, SizeY, NumOfLines);
 
 %% Save Results
 
@@ -115,7 +88,6 @@ PhotonSpreadToImage;
 
 DisplayOutcome;
 
-    
     %% Update while loop parameters
     if useIteration
         if strcmp(numOfFiles, 'All files')
