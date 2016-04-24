@@ -253,6 +253,9 @@ disp ' ... done'
 time_axis = windowSize/2 + windowStep*(0:length(analysisData)-1);
 assignin('base',[assignName '_time_axis'],time_axis);
 
+freq_Hz = 1/secsPerRow;
+
+assignin('base','freq_Hz',freq_Hz);
 %% check if need to store results in file - used when processing multiple request from "analyze later" in pathAnalyzeGui
 if isfield (analysisObject ,'save2fileName')
     %ensure RES file is save to the same directory 

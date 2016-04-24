@@ -12,6 +12,9 @@ function T = gatherRESfiles(path2sourceDir,path2groupledResults,groupedResultsFi
 %
 % No need for specific naming, just file structure
 %
+% Usage: 
+%   gatherRESfiles(source_dir,target_dir,[],{'radon_um_per_s','diameter_um '})
+%
 % Last updated Dec 2015
 
 
@@ -30,7 +33,7 @@ numAnimalIds = numel(dirContentAnimalIDLevel);
 
 %%
 RES_FILES_COMPILED = struct('animalID',[],'conditionID',[],'RESfileName',[],'name',[],'varType',[],...
-    'y_mean',[],'y_std',[],'y',[],'t',[]);
+    'y_mean',[],'y_std',[],'y',[],'t',[],'freq',[]);
 
 for iIDs = 1 : numAnimalIds
     
@@ -67,7 +70,7 @@ for iIDs = 1 : numAnimalIds
                 if ~isempty(data(1).name)
                 [data.conditionID] = deal(dirContentCurrentAnimalID(iCOND).name);
                 [data.RESfileName] = deal(dirContentRESfiles(iRES).name);
-                RES_FILES_COMPILED = [RES_FILES_COMPILED orderfields(data,{'animalID','conditionID','RESfileName','name','varType','y_mean','y_std','y','t'})];
+                RES_FILES_COMPILED = [RES_FILES_COMPILED orderfields(data,{'animalID','conditionID','RESfileName','name','varType','y_mean','y_std','y','t','freq'})];
                 else
                    fprintf('\t\t***** GOT NOT DATA FROM FILE - VARIABLES DID NOT MATCH PATTERN *****') 
                 end
