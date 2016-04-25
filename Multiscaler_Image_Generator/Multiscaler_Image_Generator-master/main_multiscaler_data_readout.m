@@ -52,34 +52,59 @@ while (currentIterationNum <= numOfFiles_int)
 
         case '1a'
             STOP1_Dataset   = CreateDataVector1a(Binary_Data, 1, double(Range));
-            STOP2_Dataset = CreateDataVector1a(Binary_Data, 2, double(Range));
+            STOP2_Dataset   = CreateDataVector1a(Binary_Data, 2, double(Range));
             START_Dataset   = CreateDataVector1a(Binary_Data, 6, double(Range)); 
 
         case '43'
             STOP1_Dataset   = CreateDataVector43(Binary_Data, 1, double(Range));
-            STOP2_Dataset = CreateDataVector43(Binary_Data, 2, double(Range));
+            STOP2_Dataset   = CreateDataVector43(Binary_Data, 2, double(Range));
             START_Dataset   = CreateDataVector43(Binary_Data, 6, double(Range));
 
         case '2'
             STOP1_Dataset   = CreateDataVector2(Binary_Data, 1, double(Range));
-            STOP2_Dataset = CreateDataVector2(Binary_Data, 2, double(Range));
+            STOP2_Dataset   = CreateDataVector2(Binary_Data, 2, double(Range));
             START_Dataset   = CreateDataVector2(Binary_Data, 6, double(Range));
     end
     fprintf('Data vectors created successfully. \nGenerating image...\n');
    
 
-%% Determine Coordinates
+%% Create the photon cell array of lines
 
 %CoordinateDeterminer;
-[PhotonCellArray, NumOfLines] = PhotonCells(START_Dataset, STOP1_Dataset, STOP2_Dataset, 1);
+[PhotonCellArray, NumOfLines, StartOfFrameChannel, MaxNumOfEventsInLine] = PhotonCells(START_Dataset, STOP1_Dataset, STOP2_Dataset, 1);
+fprintf('Finished creating the photon cell array. Creating Raw image...\n');
 
-%% Here I need to split the cells into frames.%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Create Image 
+%% Determine which data channel contains frame data
+switch StartOfFrameChannel
+    case 1
+        StartOfFrameVector = STOP1_Dataset.Time_of_Arrival;
+    case 2
+        StartOfFrameVector = STOP2_Dataset.Time_of_Arrival;
+    case 6
+        StartOfFrameVector = START_Dataset.Time_of_Arrival;
+end
 
+%% Create Images 
 SizeX = 1500;
 SizeY = 150;
-[RawImage, C] = PhotonSpreadToImage2(PhotonCellArray, SizeX, SizeY, NumOfLines);
 
+% Initialization before while loop
+CurrentFramePhotons = cell(1, max(SizeX, SizeY)); % Initializing cell array for speed of execution
+CurrentLineIndex = 1;
+CurrentLineTime = PhotonCellArray{1, CurrentLineIndex};
+
+for NumberOfFrame = 1:size(StartOfFrameVector, 1) - 1 % Runs over the amount of frames in the image, every image creates a new figure
+    figure(NumberOfFrame);
+    CurrentLineTime = PhotonCellArray{1, 2};
+    NextFrameTime = StartOfFrameVector(NumberOfFrame + 1, 1); % Upper limit on the frame time
+    while CurrentLineTime < NextFrameTime
+        CurrentFramePhotons{CurrentLineIndex} = PhotonCellArray{2, CurrentLineIndex};
+        CurrentLineIndex = CurrentLineIndex + 1;
+        CurrentLineTime = PhotonCellArray{1, CurrentLineIndex};
+    end
+    [RawImage, C] = PhotonSpreadToImage2(cell2mat(CurrentFramePhotons), SizeX, SizeY, NumOfLines);
+    CurrentFramePhotons = cell(1, max(SizeX, SizeY)); % Initialize data
+end
 %% Save Results
 
 % MySaver;
