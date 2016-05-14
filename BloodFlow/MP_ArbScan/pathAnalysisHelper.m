@@ -260,7 +260,14 @@ assignin('base','freq_Hz',freq_Hz);
 if isfield (analysisObject ,'save2fileName')
     %ensure RES file is save to the same directory 
     pathstr = fileparts(analysisObject.fullFileNameArbData);
-    cmd = sprintf('save(''%s'')',fullfile(pathstr,analysisObject.save2fileName));
+    resFileName = fullfile(pathstr,analysisObject.save2fileName);
+    if exist(resFileName,'file')
+        %new file
+        cmd = sprintf('save(''%s'')',resFileName);
+    else
+        %append to existing file
+    cmd = sprintf('save(''%s'',''-append'')',resFileName);
+    end
     evalin('base',cmd);
 end
 
