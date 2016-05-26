@@ -39,6 +39,7 @@ dataType = fileExt(2:end);
 assignName(assignName == ' ') = '_';       % change spaces to underscores
 
 %scanVelocity = analysisObject.scanVelocity; % only use if needed
+fprintf('\nWorking on %s started on %s',fileNameArbData,datestr(now))
 
 %% get the first 1000 lines, and associated info
 disp(num2str(imageCh))
@@ -206,7 +207,7 @@ end
 
 if isfield(analysisObject,'cleanWorkspace')
     if analysisObject.cleanWorkspace
-        evalin('base','clear all')
+        evalin('base','clear line_*') %PB changed from clear all to line_* as we have a wrapper to run multiple a files.
     end
 end
 
@@ -260,8 +261,10 @@ assignin('base','freq_Hz',freq_Hz);
 if isfield (analysisObject ,'save2fileName')
     %ensure RES file is save to the same directory 
     pathstr = fileparts(analysisObject.fullFileNameArbData);
+ 
     resFileName = fullfile(pathstr,analysisObject.save2fileName);
-    if exist(resFileName,'file')
+ 
+    if ~exist(resFileName,'file')
         %new file
         cmd = sprintf('save(''%s'')',resFileName);
     else

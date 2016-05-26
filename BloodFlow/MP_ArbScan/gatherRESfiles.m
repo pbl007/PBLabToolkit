@@ -85,5 +85,5 @@ end%cycling animal ids
 fprintf('\nSaving data (.mat and .txt) to %s',path2groupledResults);
 RES_FILES_COMPILED=RES_FILES_COMPILED(2:end);
 T = struct2table(RES_FILES_COMPILED);
-writetable(T,fullfile(path2groupledResults,'ALL_RES_FILES.txt'))
+%writetable(T,fullfile(path2groupledResults,'ALL_RES_FILES.txt'))
 save(fullfile(path2groupledResults,'ALL_RES_FILES.mat'),'RES_FILES_COMPILED')
