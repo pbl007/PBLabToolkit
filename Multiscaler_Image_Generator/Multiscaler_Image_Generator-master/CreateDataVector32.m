@@ -33,11 +33,21 @@ switch Data_Channel_Num
         Time_of_Arrival_Before_Sweep_Correction = bin2dec(Data_Readings(:,9:44));        
 end
 
+%% Check if the data vector is empty
+if isempty(Data_Readings)
+    fprintf('Data channel number %d was empty. ', Data_Channel_Num);
+    Final_Dataset = [];
+    return;
+end
+
 %% Update time of arrival to include sweep counter
-
-Time_of_Arrival = Time_of_Arrival_Before_Sweep_Correction(:,1) + (Sweep_Counter(:,1) - 1) * Range;
-
+if ~isempty(Sweep_Counter(Sweep_Counter(:,1) > 1,1))
+    Time_of_Arrival = Time_of_Arrival_Before_Sweep_Correction(:,1) + (Sweep_Counter(:,1) - 1) * Range;
+else
+    Time_of_Arrival = Time_of_Arrival_Before_Sweep_Correction;
+end
 %% Send out the data table
+Time_of_Arrival = sort(Time_of_Arrival);
 Data_Lost = base2dec(Data_Readings(:,1), 10);
 if size(Data_Readings, 1) == 1
     cell_help = cell(1, 3);
@@ -49,6 +59,6 @@ end
 
 %% Add first row of zeros (signaling the first start event which is unrecorded)
 cell_help = cell(1, 3);
-cell_help{1,1} = 0; cell_help{1,2} = 1; cell_help{1,3} = 0;
+cell_help(:,:) = {0};
 Final_Dataset = [cell2table(cell_help, 'VariableNames', {'Time_of_Arrival' 'Sweep_Counter' 'Data_Lost'}); Final_Dataset];
 end

@@ -43,16 +43,14 @@ end
 %% Read Data
 hex_data = textscan(fileID, formatSpec);
 
-
 %% Depending on time_patch number, read the data vector accordingly
-switch time_patch
-    case '32'
-        binary_data = hex2bin(hex_data{1,1}(:,1), 48);
-    case '1a'
-        binary_data = hex2bin(hex_data{1,1}(:,1), 48);
-    case '43'
-        binary_data = hex2bin(hex_data{1,1}(:,1), 64);
-end
+keySet = {'32', '1a', '43', '2', '2a', '22', '5b', 'Db', 'f3', 'c3', '3'};
+valueSet ={48, 48, 64, 48, 48, 48, 64, 64, 64, 64, 64}; 
+% WHEN ADDING A NEW TIME PATCH DON'T FORGET TO UPDATE MAIN SCRIPT AND THE
+% CREATE DATA VECOTR FUNCTION
+mapObj = containers.Map(keySet, valueSet);
+
+binary_data = hex2bin(hex_data{1,1}(:,1), mapObj(time_patch));
 
 fclose(fileID);
 end
