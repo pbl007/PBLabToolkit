@@ -18,7 +18,7 @@ load(path2RESfile)
 
 if ischar(variables2extract)
    if strcmp(variables2extract,'all')
-       variables2extract = {'radon_um_per_s','diameter_um','intensity'};
+       variables2extract = {'radon_um_per_s','diameter_um','intensity'}
    end
 end
 
