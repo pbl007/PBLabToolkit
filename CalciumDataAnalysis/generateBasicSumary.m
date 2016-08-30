@@ -1,4 +1,4 @@
-% generateBasicSumary
+function generateBasicSumary (path2sourceDir,thisRow)
 
 %% C_df matrix of the EP analysis
 
@@ -6,18 +6,18 @@ dF = thisRow.C_df;
 [nCells nT] = size(dF);
 img = thisRow.maxProjImg;
 Coor = thisRow.Coor;
- 
+S_or = thisRow.S_or;
 
 %% plot image
 figure('Name',thisRow.dataFileName)
 subplot(3,3,[2 3 5 6])
 imagesc(img)
 axis image
-colormap copper
+title(thisRow.dataFileName)
 imagesc(img)
 colormap copper
 hold on
-myctr = zeros(size(Adj,1),2);
+myctr = zeros(size(Coor,1),2);
 for iCOOR = 1 : numel(Coor)
     xi = Coor{iCOOR,1}(1,:);
     yi = Coor{iCOOR,1}(2,:);

@@ -1,15 +1,13 @@
 function [T,EP_FILES_COMPILED] = gatherCalciumMatFiles(path2sourceDir)
 %funcitons browses set of input directories and gathers results into "database"
 %
-%Folder setup
+%Directory structure
 %
 %   animalID
-%       |____ Condition 1 (HYPO/HYPER x TAC/SHAM)
+%       |____ Condition where "Condition" is  (HYPO/HYPER x TAC/SHAM)
 %           |____DAY_x //x is number - baseline is 0
-%               |___ EXP_x //where x type is either STIM
-%               or SPONT (for spontaneous)
-%                     |____ FOV
-%                         |____ part x // where x is 1 by default, must be
+%               |___ EXP_x //where x is  either STIM or SPONT (for spontaneous)
+%                     |____ FOV_x // where x is 1 by default, must be
 %                   present.
 %       |____ Condition 2
 %       |____ Condition 3
@@ -111,13 +109,17 @@ for iIDs = 1 : numAnimalIds
                     
                     FOV = dirContentCurrentEXP(iFOV).name;
                     FOV = FOV(strfind(FOV,'_')+1:end);
-                    %finally got to last leaf
+                   
+                    %finally got to last leaf - GET DATA HERE
                     [ thisRow ] = getDataFromCurrentDir( path2CurrentFOV ,animalID, dataRow);
                     thisRow.animalID = animalID;
                     thisRow.conditionID = conditionID;
                     thisRow.daysAfterBaseline = dirContentCurrentCond(iDAY).name;
                     thisRow.experimentType = experimentID;
                     thisRow.FOV = FOV;
+                    
+                    %generate summary figure
+                    generateBasicSumary (path2sourceDir,thisRow)
                     
                     %append to struct
                     EP_FILES_COMPILED = [EP_FILES_COMPILED thisRow];
