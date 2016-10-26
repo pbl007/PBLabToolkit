@@ -21,6 +21,13 @@ end
 
 useGPU = gpuDeviceCount;
 
+% Starp a parallel pool if it doesn't exist
+p = gcp;
+if isempty(p)
+    parpool('local')
+end
+
+
 %% analysisObject has the following elements:
 
 fileNameArbData      = analysisObject.fullFileNameArbData;
@@ -112,6 +119,45 @@ delt = analysisObject.timePerLine_ms;%ms
 lineskip = 1; % this is relevant when anlyzing whole file, not single block
 xrange = [2 lastIndexThisObject-firstIndexThisObject]-1;
 
+
+%lspiv - for fast line scans
+if strfind(analysisType,'lspiv')
+    % Parameters to improve fits
+    lspiv.maxGaussWidth = 100;  % maximum width of peak during peak fitting
+    
+    % Judge correctness of fit
+    lspiv.numstd        = 3;  %num of stdard deviation from the mean before flagging
+    lspiv.windowsize    = 1/delt*1000; %in # scans, this will be converted to velocity points
+    %if one scan is 1/2600 s, then windowsize=2600 means
+    %a 1 second moving window.  Choose the window size
+    %according to experiment.
+    lspiv.windowsize=10;
+    
+    lspiv.speedSetting = analysisObject.speedSetting; %this will come from interface
+    
+    if lspiv.speedSetting == 1   % CAPILLARY SETTING
+        lspiv.numavgs       = 100;  %up to 100 (or more) for noisy or slow data
+        lspiv.skipamt       = 1;   %if it is 2, it skips every other point.  3 = skips 2/3rds of points, etc.
+        lspiv.shiftamt      = 5;
+    elseif lspiv.speedSetting == 2   % ARTERY SETTING
+        lspiv.numavgs       = 100;  %up to 100 (or more) for noisy or slow data
+        lspiv.skipamt       = 1;   %if it is 2, it skips every other point.  3 = skips 2/3rds of points, etc.
+        lspiv.shiftamt      = 1;
+    elseif lspiv.speedSetting == 3   % USER SETTING
+        disp('settings are hard coded in the script, see script!');
+        lspiv.numavgs       = 100;  %up to 200 (or more) for troublesome data. However
+        %you will lose some of the info in the peaks and
+        %troughs
+        lspiv.skipamt       = 10;   %if it is 2, it skips every other point.  3 = skips 2/3rds of points, etc.
+        lspiv.shiftamt      = 1;
+    end
+    
+    lspiv.endColumn = lastIndexThisObject;
+    lspiv.startColumn = firstIndexThisObject;
+    lspiv.doPlot = 1;
+    
+end %settings for lspiv
+
 %intensity - nothing really
 
 
@@ -119,87 +165,96 @@ xrange = [2 lastIndexThisObject-firstIndexThisObject]-1;
 %% loop through data, creating blocks to analyse
 
 nLinesPerBlock = round(windowSize / (nPointsPerLine * dt));   % how many lines in each block?
-
 windowStartPoints = round(1:windowStep / (nPointsPerLine * dt) : nLines-nLinesPerBlock);  % where do the windows start (in points?)
 
 %%
 % cut down the window
 %jdd - shorten the analysis, for testing
 %windowStartPoints = windowStartPoints(1:100);
+disp(['calculating ' analysisType '(displaying percent done) ...'])
+
 
 analysisData = 0*windowStartPoints;      % create space to hold data
 analysisDataSep = analysisData;          % holds the separation (only needed for Radon)
 
-disp(['calculating ' analysisType '(displaying percent done) ...'])
-%%
-% loop through the data, calculating relevant variable
-parfor i = 1:length(windowStartPoints)
-    if ~mod(i,round(length(windowStartPoints)/50))
-        disp(['  ' num2str(round(100*i/length(windowStartPoints))) ' %'])
-    end
+
+%% The LSPIV analysis need to work on a different blocking framework (internal) and it also performs a global FFT on the entire data - separate from rest
+if strfind(analysisType,'lspiv')
+    % call lspiv
+    [lspivRes] = LSPIV(fileNameArbData,lspiv);
     
-    w = windowStartPoints(i);         % which line to start this window?
-    switch dataType
-        case 'mpd'
-            % passing 'true' as the last line keeps the activeX from being re-opened
-            blockData = mpdRead(fileNameArbData,'lines',imageCh, ...
-                w:w-1+nLinesPerBlock,true);
-            
-            %    blockDataMean = mean(blockData.Ch1,1);      % take mean of several frames
-            if imageCh == 1
-                blockDataMean = mean(blockData.Ch1,1);   % take mean of several frames imageCh == 1
-            elseif imageCh == 2
-                blockDataMean = mean(blockData.Ch2,1);   % take mean of several frames imageCh == 2
-            elseif imageCh == 3
-                blockDataMean = mean(blockData.Ch3,1);   % take mean of several frames imageCh == 3
-            elseif imageCh == 4
-                blockDataMean = mean(blockData.Ch4,1);   % take mean of several frames imageCh == 4
-            end
-            
-            %     blockDataMean = blockDataMean(firstIndexThisObject:lastIndexThisObject);  % cut out only portion for this object
-            
-            %blockDataCut = blockData.Ch1(:,firstIndexThisObject:lastIndexThisObject);
-            if imageCh == 1
-                blockDataCut = blockData.Ch1(:,firstIndexThisObject:lastIndexThisObject);
-            elseif imageCh == 2
-                blockDataCut = blockData.Ch2(:,firstIndexThisObject:lastIndexThisObject);
-            elseif imageCh == 3
-                blockDataCut = blockData.Ch3(:,firstIndexThisObject:lastIndexThisObject);
-            elseif imageCh == 4
-                blockDataCut = blockData.Ch4(:,firstIndexThisObject:lastIndexThisObject);
-            end
-            %jdd
-            %if i==1
-            %    assignin('base','b1',blockDataCut);
-            %    return
-            %end
-        case 'tif'
-            blockData = flextiffread(fileNameArbData, [w w-1+nLinesPerBlock]);
-            %            fprintf('\n%d\t%d\t%d',i,w,size(blockData,1));
-            blockDataCut=blockData(:,firstIndexThisObject:lastIndexThisObject);
-            
-    end
-    blockDataMean = mean(blockDataCut);
-    if strcmp(analysisType,'diameter')
-        analysisData(i) = calcFWHM(blockDataMean,smoothing);%not passing threshold forces computation of local maxima for each window
-    elseif strcmp(analysisType,'intensity')
-        analysisData(i) = mean(blockDataMean);
-    elseif strcmp(analysisType,'radon')
-        [theta sep] = radonBlockToTheta(blockDataCut,thetaAccuracy,thetaRange);
-        analysisData(i) = theta;
-        analysisDataSep(i) = sep;
-        % look around previous value for theta
-        % this speeds things up, but can also cause the data to "hang"
-        % on incorrect values
-        %thetaRange = [theta-10:theta+10];
-    elseif strcmp(analysisType,'hybridvel')
-        %inteface with hybrid alg
+else
+    %radon [of different kinds], diameter, intensity
+    % loop through the data, calculating relevant variable
+    parfor i = 1:length(windowStartPoints)
+        if ~mod(i,round(length(windowStartPoints)/50))
+            disp(['  ' num2str(round(100*i/length(windowStartPoints))) ' %'])
+        end
         
-        [ang, ~,~] = hybridvel(blockDataCut,showimg,saveimg,delx,delt,nLinesPerBlock-2,lineskip,xrange,1);
-        analysisData(i) = ang(1,9,3); %speed is returned in ang(1,9,3), mm/s
-        analysisDataSep(i) = ang(1,1,3)%angle in degrees
-    end
-end
+        w = windowStartPoints(i);         % which line to start this window?
+        switch dataType
+            case 'mpd'
+                % passing 'true' as the last line keeps the activeX from being re-opened
+                blockData = mpdRead(fileNameArbData,'lines',imageCh, ...
+                    w:w-1+nLinesPerBlock,true);
+                
+                %    blockDataMean = mean(blockData.Ch1,1);      % take mean of several frames
+                if imageCh == 1
+                    blockDataMean = mean(blockData.Ch1,1);   % take mean of several frames imageCh == 1
+                elseif imageCh == 2
+                    blockDataMean = mean(blockData.Ch2,1);   % take mean of several frames imageCh == 2
+                elseif imageCh == 3
+                    blockDataMean = mean(blockData.Ch3,1);   % take mean of several frames imageCh == 3
+                elseif imageCh == 4
+                    blockDataMean = mean(blockData.Ch4,1);   % take mean of several frames imageCh == 4
+                end
+                
+                %     blockDataMean = blockDataMean(firstIndexThisObject:lastIndexThisObject);  % cut out only portion for this object
+                
+                %blockDataCut = blockData.Ch1(:,firstIndexThisObject:lastIndexThisObject);
+                if imageCh == 1
+                    blockDataCut = blockData.Ch1(:,firstIndexThisObject:lastIndexThisObject);
+                elseif imageCh == 2
+                    blockDataCut = blockData.Ch2(:,firstIndexThisObject:lastIndexThisObject);
+                elseif imageCh == 3
+                    blockDataCut = blockData.Ch3(:,firstIndexThisObject:lastIndexThisObject);
+                elseif imageCh == 4
+                    blockDataCut = blockData.Ch4(:,firstIndexThisObject:lastIndexThisObject);
+                end
+                %jdd
+                %if i==1
+                %    assignin('base','b1',blockDataCut);
+                %    return
+                %end
+            case 'tif'
+                blockData = flextiffread(fileNameArbData, [w w-1+nLinesPerBlock]);
+                %            fprintf('\n%d\t%d\t%d',i,w,size(blockData,1));
+                blockDataCut=blockData(:,firstIndexThisObject:lastIndexThisObject);
+                
+        end
+        blockDataMean = mean(blockDataCut);
+        if strcmp(analysisType,'diameter')
+            analysisData(i) = calcFWHM(blockDataMean,smoothing);%not passing threshold forces computation of local maxima for each window
+        elseif strcmp(analysisType,'intensity')
+            analysisData(i) = mean(blockDataMean);
+        elseif strcmp(analysisType,'radon')
+            [theta sep] = radonBlockToTheta(blockDataCut,thetaAccuracy,thetaRange);
+            analysisData(i) = theta;
+            analysisDataSep(i) = sep;
+            % look around previous value for theta
+            % this speeds things up, but can also cause the data to "hang"
+            % on incorrect values
+            %thetaRange = [theta-10:theta+10];
+        elseif strcmp(analysisType,'hybridvel')
+            %inteface with hybrid alg
+            
+            [ang, ~,~] = hybridvel(blockDataCut,showimg,saveimg,delx,delt,nLinesPerBlock-2,lineskip,xrange,1);
+            analysisData(i) = ang(1,9,3); %speed is returned in ang(1,9,3), mm/s
+            analysisDataSep(i) = ang(1,1,3)%angle in degrees
+        end
+    end %parfor for blocks of data
+    
+end % running either lspiv or the rest of analysis types
 %% post-processing, if necessary
 
 %here we assign variable to the base workspace. Check if we need to clean up workspace before hand, needed to save to
@@ -241,7 +296,29 @@ elseif strcmp(analysisType,'diameter')
 elseif strcmp(analysisType,'hybridvel')
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_hybridvel_um_per_s'],analysisData*1000);   % value is in mm/sec
     assignin('base',[assignName '_' 'ch' num2str(imageCh) '_hybridvel_theta'],analysisDataSep);   % value is in mm/sec
- 
+    
+elseif strcmp(analysisType,'lspiv')
+    %speed is computed as displacement in pixel/scan - convert to um/sec
+    
+    %  pixel     mvPerCol     um     um
+    % ------ =  ---------- * ---- = -----
+    %  scan     secsPerRow    mV     sec
+    
+    lspivRes.velocity_um_per_s = lspivRes.velocity_pixels_per_scan * mvPerCol/secsPerRow * analysisObject.um2mv
+    %need to interpolate to obtain the same number of point as the rest of
+    %the analysis (diameter, intensity etc)
+    
+    nPointsInAnalysisData = numel(analysisData);
+    nPointsInLSPIV = numel(lspivRes.velocity_pixels_per_scan);
+    
+    idx = lspivRes.index_vals;
+    idxq = linspace(idx(1),idx(end),nPointsInAnalysisData);
+    vq = interp1(idx,lspivRes.velocity_pixels_per_scan,idxq);
+    
+    lspivRes.index_vals
+    assignin('base',[assignName '_' 'ch' num2str(imageCh) '_lspiv_um_per_s'],vq/1000);   % value is in mm/sec but variable is um_ (!)
+    assignin('base',[assignName '_' 'ch' num2str(imageCh) '_lspiv_index_vals'],idx);   % value is in mm/sec
+    
 else
     % other analysis, besides radon or diameter (i.e., intensity)
     assignName(assignName == ' ') = '_';                           % change spaces to underscores
@@ -259,17 +336,17 @@ freq_Hz = 1/secsPerRow;
 assignin('base','freq_Hz',freq_Hz);
 %% check if need to store results in file - used when processing multiple request from "analyze later" in pathAnalyzeGui
 if isfield (analysisObject ,'save2fileName')
-    %ensure RES file is save to the same directory 
+    %ensure RES file is save to the same directory
     pathstr = fileparts(analysisObject.fullFileNameArbData);
- 
+    
     resFileName = fullfile(pathstr,analysisObject.save2fileName);
- 
+    
     if ~exist(resFileName,'file')
         %new file
         cmd = sprintf('save(''%s'')',resFileName);
     else
         %append to existing file
-    cmd = sprintf('save(''%s'',''-append'')',resFileName);
+        cmd = sprintf('save(''%s'',''-append'')',resFileName);
     end
     evalin('base',cmd);
 end

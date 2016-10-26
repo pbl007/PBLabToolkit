@@ -1,3 +1,4 @@
 *.mat
 */DEV/
 *.wiki/
+*.DS_store

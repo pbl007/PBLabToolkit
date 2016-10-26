@@ -119,8 +119,9 @@ for iIDs = 1 : numAnimalIds
                     thisRow.FOV = FOV;
                     
                     %generate summary figure
-                    generateBasicSumary (path2sourceDir,thisRow)
-                    
+                    if ~isempty(thisRow.dataFileName)
+                        generateBasicSumary (path2sourceDir,thisRow)
+                    end
                     %append to struct
                     EP_FILES_COMPILED = [EP_FILES_COMPILED thisRow];
                     

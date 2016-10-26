@@ -18,7 +18,8 @@ function varargout = pathAnalyzeGUI(varargin)
 %
 % PB - implemented analysis of tiff instead of mpd
 % PB - implemented support of parallel processing (parfor)
-% 2015-11-19 PABLO BLINDER 
+% PB - implemented lspiv parallel analysis (fft-based RBC speed).
+% 2016-11-05 PABLO BLINDER 
 
 
 % Last Modified by GUIDE v2.5 29-Nov-2015 15:50:38
@@ -547,6 +548,49 @@ end
 plot([userEndPoint userEndPoint],[1 ymax],'r')
 hold off
 
+% --- helper function, initialize dataStructure for all anlysis types
+function dataStruct = generateDataStruct(handles,analysisType)
+elementIndex = get(handles.listboxScanCoords,'Value');    % grab the selected element
+
+% based on the item selected in the listbox, and the pathObjNum, find
+% the start and end indices
+allIndicesThisObject = find(handles.scanData.pathObjNum == elementIndex);
+firstIndexThisObject = allIndicesThisObject(1);
+lastIndexThisObject = allIndicesThisObject(end);
+
+% let the user change the points, if desired
+[firstIndexThisObject, lastIndexThisObject] = ...
+    selectLimit(handles,firstIndexThisObject,lastIndexThisObject);
+
+dataStruct = struct( ...
+    'fullFileNameArbData',[handles.fileDirectory handles.fileNameArbData], ...
+    'firstIndexThisObject',firstIndexThisObject, ...
+    'lastIndexThisObject',lastIndexThisObject, ...
+    'assignName',handles.scanData.scanCoords(elementIndex).name, ...
+    'windowSize',handles.windowSize, ...
+    'windowStep',handles.windowStep,...
+    'analysisType',analysisType, ...
+    'scanVelocity',handles.scanData.scanVelocity, ...
+    'imageCh',handles.imageCh,...
+    'dt',handles.scanData.dt,...
+    'um2pxl',handles.um2pxRatio);
+
+pxl2mv = size(handles.scanData.im,2)/sum(abs(handles.scanData.axisLimCol))/1000; %compute from number of columns and axisLimCol, convert to mV.
+um2mv = handles.um2pxRatio * pxl2mv;
+dataStruct.um2mv = um2mv;
+dataStruct.timePerLine_ms = handles.timePerLine * 1000;
+if isfield (handles.scanData,'isCropped')
+    dataStruct.oriPathLen = handles.scanData.oriPathLen;%keep track of
+    dataStruct.isCropped = 1;
+end
+
+if isfield(handles,'dataTif')
+    dataStruct.dataTif = handles.dataTif;
+    dataStruct.dt = handles.scanData.dt;
+end
+
+
+
 
 % --- BUTTON - Diameter Transform
 function pushButtonDiameterTransform_Callback(hObject, eventdata, handles)
@@ -905,13 +949,16 @@ fprintf(fid,');\n');
 %added by PB
 pxl2mv = size(handles.scanData.im,2)/sum(abs(handles.scanData.axisLimCol))/1000; %compute from number of columns and axisLimCol, convert to mV.
 um2mv = handles.um2pxRatio * pxl2mv;
-fprintf(fid,'dataStruct.oriPathLen = %f;\n',handles.scanData.oriPathLen);
+
 if isfield (handles.scanData,'isCropped')
     fprintf(fid,'dataStruct.oriPathLen = %f;\n',handles.scanData.oriPathLen);
+    fprintf(fid,'dataStruct.timePerLine_ms = %f;\n',handles.scanData.pathPeriod_s/1000);
     fprintf(fid,'dataStruct.isCropped = 1;\n');
 end
 
-fprintf(fid,'dataStruct.timePerLine_ms = %f;\n',handles.scanData.pathPeriod_s/1000);
+if isfield(dataStruct,'speedSetting')
+    fprintf(fid,'dataStruct.speedSetting = %d;\n',dataStruct.speedSetting);
+end
 fprintf(fid,'dataStruct.um2mv = %f;\n',um2mv);
 fprintf(fid,'dataStruct.dataTif = struct(''nRows'',%d,''nCols'',%d,''nFrames'',%d);\n',handles.dataTif.nRows,handles.dataTif.nCols,handles.dataTif.nFrames);
 fprintf(fid,'dataStruct.save2fileName = ''RES_%s'';\n',handles.fileNameMat);
@@ -1026,6 +1073,24 @@ function pushbutton_xcorrTransform_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_xcorrTransform (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+%
+% LSPIV analysis - get extra parameters for type (1 - capillary, 2 -
+% artery, 3 - custom, not implemented)
+
+
+dataStruct = generateDataStruct(handles,'lspiv');
+
+%add more paremeters as required
+dataStruct.speedSetting = listdlg('PromptString','Select vessel type:',...
+                'SelectionMode','single',...
+                'ListString',{'Capillary', 'Artery','Custom'})
+
+%run/store
+if handles.analyseLater
+    writeForLater(dataStruct,handles);
+else
+    pathAnalysisHelper(dataStruct);
+end
 
 
 % --- Executes on button press in pushbutton_RadonTransformFastFlow.
@@ -1106,3 +1171,5 @@ function edit_imageMicronToPixelRatio_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
