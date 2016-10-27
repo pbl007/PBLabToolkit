@@ -1,9 +1,9 @@
 %% Script info
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % File name: "DataHeaders.m"                                   %
-% Purpose: Creates the first row of the data cell array. This  %
-% row should contain the starting time bin number for the data %
-% that follows below it.                                       %
+% Purpose: Creates the right column of the event array. This   %
+% column should contain the starting time bin number for the   %
+% data that follows to the left of it.                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 

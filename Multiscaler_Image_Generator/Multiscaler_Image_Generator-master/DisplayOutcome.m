@@ -1,6 +1,6 @@
-SumImage = sum(RawImage,3);
-ProdImage = prod(RawImage+1,3) - 1;
-ProdImage2 = prod(RawImage+0.5,3) - prod(0.5.*ones(size(RawImage)),3);
+SumImage = sum(RawImagesMat,3);
+ProdImage = prod(RawImagesMat+1,3) - 1;
+ProdImage2 = prod(RawImagesMat+0.5,3) - prod(0.5.*ones(size(RawImagesMat)),3);
 
 RawImage2(:,:,1) = SumImage;
 RawImage2(:,:,2) = ProdImage ;

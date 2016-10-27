@@ -33,11 +33,19 @@ switch Data_Channel_Num
         Time_of_Arrival_Before_Sweep_Correction = bin2dec(Data_Readings(:,17:44)); % reads timestamp data and converts it to decimal       
 end
 
+%% Check if the data vector is empty
+if isempty(Data_Readings)
+    fprintf('Data channel number %d was empty. ', Data_Channel_Num);
+    Final_Dataset = [];
+    return;
+end
+
 %% Update time of arrival to include sweep counter
 
 Time_of_Arrival = Time_of_Arrival_Before_Sweep_Correction(:,1) + (Sweep_Counter(:,1) - 1) * Range;
 
 %% Send out the data table
+Time_of_Arrival = sort(Time_of_Arrival);
 Data_Lost = zeros(size(Data_Readings, 1),1); % No data lost bit in this type of file
 if size(Data_Readings, 1) == 1
     cell_help = cell(1, 3);
