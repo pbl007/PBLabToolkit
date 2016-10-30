@@ -142,11 +142,12 @@ catch
     disp('plot fail')
 end
 
-save_filename=[animal '_' FOV_ID '_mv_mpP_' fname(1:end-4) '_' the_date];
+[path2dir,fname] = fileparts(fname);
+save_filename=[animal '_' FOV_ID '_mv_mpP_' fname '_' the_date];
 % [mv_mpP]=PlotMovieDiameters_walking(mv_mpP,walking_analog,1);%original
 [mv_mpP]=PlotMovieDiameters_walking(mv_mpP,[],1);
 
-path2dir = fileparts(fname);
+
 try
     save(fullfile(path2dir,save_filename),'mv_mpP')%save processed file to current directory
     fprintf('\n Saved last analysis to %s',fullfile(path2dir,save_filename));
@@ -252,11 +253,11 @@ for mv=1:length(mv_mpP)
     mv_mpP(mv).Vessel.projection_angle=atand(diff(mv_mpP(mv).Vessel.vessel_line.position.xy(:,1))/diff(mv_mpP(mv).Vessel.vessel_line.position.xy(:,2)));
     atand(diff(mv_mpP(mv).Vessel.vessel_line.position.xy(:,1))/diff(mv_mpP(mv).Vessel.vessel_line.position.xy(:,2)))
     
-    for theframe=(mv_mpP(1).startframe):mv_mpP(1).endframe
+   for theframe=(mv_mpP(mv).startframe):mv_mpP(mv).endframe
         raw_frame =imread(fname,'Index',theframe);%(mp2mat_getChannelData_narrow_noplot(mpfile,1,mv_mpP(1), [theframe theframe],[1 mv_mpP(1).xsize]));
         fft_raw_frame=fft2(double(raw_frame));
         if mv==1
-            [mv_mpP(1).pixel_shift(:,theframe), Greg]=dftregistration(fft_first_frame,fft_raw_frame,1);
+            [mv_mpP(mv).pixel_shift(:,theframe), Greg]=dftregistration(fft_first_frame,fft_raw_frame,1);
         end
         inpoly_frame = inpolygon(X-mv_mpP(1).pixel_shift(3,theframe),Y-mv_mpP(1).pixel_shift(4,theframe),mv_mpP(mv).Vessel.box_position.xy(:,1),mv_mpP(mv).Vessel.box_position.xy(:,2));
         bounded_raw_frame=raw_frame.*uint16(inpoly_frame);
