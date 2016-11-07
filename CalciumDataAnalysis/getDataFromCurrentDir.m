@@ -14,7 +14,22 @@ function [ dataRow ] = getDataFromCurrentDir( currentDir ,animalID, dataRow)
 warning OFF BACKTRACE %turns off displaying line #
 %look for data
 ptr2mat = dir([currentDir filesep '*' animalID '*.mat']);
+%mat file name cannot contain "analog" on it's name
+%%
+valid = zeros(numel(ptr2mat),1)
+for iFILE = 1 : numel(valid)
+    if isempty(strfind(ptr2mat(iFILE).name,'Analog'))
+        valid(iFILE) = 1;
+    end
+  
+end
 
+if sum(valid)>1
+    error('Folder contains more that a single .mat file with appropiate name')
+end
+
+ptr2mat = ptr2mat(logical(valid));
+%%
 %get EP data
 if isempty(ptr2mat)
     warning('No EP data here...')
