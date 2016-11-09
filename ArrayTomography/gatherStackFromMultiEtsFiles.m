@@ -16,17 +16,19 @@ nChannels = 4;
 iR = 1;
 iC = 1;
 %%
+
 dirContent = dir([path2dir filesep prefixFolderName folderBaseName '*']);
 nTargetFolders = numel(dirContent);
 for iCH = 1 : nChannels
+    clear stack%
     for iFOLDER = 1 : 20
         iZ = iFOLDER; %not sure if always z=folder
         subPath = sprintf('%s%s%d%s%s',prefixFolderName,folderBaseName,iFOLDER,postfixFolderName, filesep, leafFolderName);
         path2ets =  fullfile( path2dir,subPath,etsTargetFileName);
-        stack(:,:,iFOLDER)  = imreadBF(path2ets,1,1,iCH);
+        stack(:,:,iFOLDER)  = uint16(imreadBF(path2ets,1,1,iCH));
         tifTargetName = sprintf('%s-Z%03d-R%03d-C%03d-CH%02d.tif',experimentBaseName,iZ,iR,iC,iCH);
         path2tif =  fullfile( path2dir,subPath,tifTargetName);
-        maketiff(stack(:,:,iFOLDER),path2tif);
+        maketiff(uint16(stack(:,:,iFOLDER)),path2tif);
     end
     stackTargetName = fullfile(path2dir,(sprintf('%s-R%03d-C%03d-CH%02d.tif',experimentBaseName,iR,iC,iCH)))
     maketiff(stack,stackTargetName);
