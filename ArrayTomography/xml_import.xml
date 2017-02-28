@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!DOCTYPE TeraStitcher
+  PUBLIC "SYSTEM" "TeraStitcher.DTD">
+<TeraStitcher volume_format="TiledXY|2Dseries">
+   <STACKS>
+      <stacks ROW="1">
+         <NORTH_displacements/>
+         <EAST_displacements/>
+         <SOUTH_displacements/>
+         <WEST_displacements/>
+      </stacks>
+      <stacks ROW="1">
+         <NORTH_displacements/>
+         <EAST_displacements/>
+         <SOUTH_displacements/>
+         <WEST_displacements/>
+      </stacks>
+   </STACKS>
+</TeraStitcher>

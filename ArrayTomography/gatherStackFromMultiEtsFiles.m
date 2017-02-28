@@ -1,5 +1,5 @@
-path2dir = '/Users/pb/Data/PBLab/Shany/AT R16/';
-
+path2dir = '/Volumes/Elements/AT/20170130_1.4_ R16_cyl1';
+addpath('/Users/pb/Documents/Software/imreadBF_2')
 
 
 experimentBaseName = 'AT_R16';
@@ -15,9 +15,11 @@ nChannels = 4;
 %dummy indices of row and column position, will be used in the future;
 iR = 1;
 iC = 1;
-%%
+%% Get directory content, we expect here one "stack" file per dir
 
-dirContent = dir([path2dir filesep prefixFolderName folderBaseName '*']);
+dirContent = dir([path2dir filesep])
+
+%%
 nTargetFolders = numel(dirContent);
 for iCH = 1 : nChannels
     clear stack%

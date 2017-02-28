@@ -77,10 +77,10 @@ if isempty(input_filename),
 else%if isempty(input_filename)
     passed_path_filename = input_filename;
     [junk,filename_size] = size(passed_path_filename);
-    endpath = max(findstr(passed_path_filename,'\')); %location of last \ in path
+    endpath = max(findstr(passed_path_filename,filesep)); %location of last \ in path
     if isempty(endpath) %if only the filename alone was entered
         pathname = cd;
-        input_filename = [pathname,'\',passed_path_filename];
+        input_filename = [pathname,filesep,passed_path_filename];
         filename = passed_path_filename;
     else%isempty(endpath)
         input_filename = passed_path_filename;
