@@ -1,7 +1,7 @@
 %cycle directory, load si-tiffs, split channels and save a max projection for each.
 
-path2source = '/Users/pb/Data/PBLab/David/Leduq/20170227-RatPial_2';
-nChannels = 2;
+path2source = 'c/Volumes/Data/Julia/02022017M01-Prv';
+nChannels = 3;
 frameSize = [512 512];
 % nSlices =  31;
 

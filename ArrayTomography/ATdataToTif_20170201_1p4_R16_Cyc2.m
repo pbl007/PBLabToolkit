@@ -175,4 +175,4 @@ for iTILE = 1 : nTiles
     fprintf(fid,'%s\t%f\t%f\t%d\n',T.pathToTIF{iTILE},T.cPos(iTILE),T.rPos(iTILE),T.Z(iTILE));
     
 end
-fclose(fid)
+fclose(fid);
