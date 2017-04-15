@@ -38,6 +38,7 @@ rowOffset_pxl = expStructure.rowOffset_pxl;
 nRibbons = expStructure.nRibbons;
 nChannels = expStructure.nChannels;
 alingement_ChNum = expStructure.alingement_ChNum;
+ribbonNumbers = expStructure.ribbonNumbers;
 %% recursively get all ets files, this will wrok also if ribbon hierarchy is not present.
 fprintf('\nRecursively looking for ets files in directory....')
 rDirContent = rdir([path2exp,'**/*.ets']);
@@ -96,7 +97,7 @@ Z = repmat(Z,nCyc,1);
 R = repmat(R,nCyc,1);
 C = repmat(C,nCyc,1);
 
-Ribbon_ID = cell2mat(arrayfun(@(x,nx) repmat(x,1,nx),1:nRibbons,nSlabsInRibbon.*nTilesInLayer ,'uniformoutput',0))';
+Ribbon_ID = cell2mat(arrayfun(@(x,nx) repmat(x,1,nx),ribbonNumbers,nSlabsInRibbon.*nTilesInLayer ,'uniformoutput',0))';
 Ribbon_ID = repmat(Ribbon_ID,nCyc,1);
 
 
