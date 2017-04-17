@@ -14,6 +14,7 @@ nTasks = size(T,1);
 taskProgress = zeros(nTasks,nChannels); %keep status tab
 
 %%
+parfor_progress(nTasks)
 parfor iTASK = 1 : nTasks
     for iCH = 1 : nChannels
         try
@@ -29,6 +30,7 @@ parfor iTASK = 1 : nTasks
         end
         taskProgress(iTASK,iCH)=status;
     end
+    parfor_progress;
 end
 
 %update progress table (can't be done inside parfor...)

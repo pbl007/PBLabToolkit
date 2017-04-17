@@ -29,6 +29,8 @@ function [vol]=imreadBF(datname,zplanes,tframes,channel)
 
 % path = fullfile(fileparts(mfilename('fullpath')), 'loci_tools.jar')
 % javaaddpath(path);
+%PB - added static so no need to do this everytime.
+
 
 if exist('lurawaveLicense')
     path = fullfile(fileparts(mfilename('fullpath')), 'lwf_jsdk2.6.jar');
