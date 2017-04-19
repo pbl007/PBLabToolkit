@@ -1,26 +1,49 @@
 % complete pipeline for calcium imaging data pre-processing
 clear;
-addpath(genpath('../NoRMCorre'));               % add the NoRMCorre motion correction package to MATLAB path
+%addpath(genpath('Z:', filesep ,'MatlabCode',filesep ,'PBLabToolkit',filesep, 'External',filesep, 'NoRMCorre-master'));  %AG Added the NoRMCorre motion correction package to MATLAB path
+%addpath(genpath('Z:',filesep ,'MatlabCode',filesep ,'PBLabToolkit',filesep, 'External',filesep, 'kakearney-subdir-pkg-7f6f8de'));  %AG Added 
+
+addpath('/data/MatlabCode/PBLabToolkit/External/NoRMCorre-master');%AG Added the NoRMCorre motion correction package to MATLAB path
+addpath('/data/MatlabCode/PBLabToolkit/External/kakearney-subdir-pkg-7f6f8de/subdir');  %AG Added subdir: a recursive file search from mathworks
+addpath('/data/MatlabCode/PBLabToolkit/External/ca_source_extraction');
+addpath('/data/MatlabCode/PBLabToolkit/External/ca_source_extraction/utilities');
+addpath('/data/MatlabCode/PBLabToolkit/External/ca_source_extraction/utilities/memmap');
+addpath('/data/MatlabCode/ScanImage/SI2016bR0_2016-12-12_dd0af29383');
+
 gcp;        % start a parallel engine
-foldername = '';   
+% %% channel separetion
+% [FileName,PathName] = uigetfile('*.tif', 'select the tiff file that needs channel separation');
+% 
+% files = subdir(fullfile(PathName,'*.tif')); 
+% [header,Aout,imgInfo] = scanimage.util.opentif(files.name, 'channel',1);
+% ChOneFile=squeeze (Aout);
+% save ('AG_ChannelSep.mat','ChOneFile', '-v7.3');
+% 
+% foldername = PathName;
+%%
+foldername =  uigetdir('/data/Amos/GitHub/FilesToAnalyze', 'select the folder of the .mat files for EP analysis');   
+%foldername =  '/data/Amos/GitHub/FilesToAnalyze';
         % folder where all the files are located. Currently supported .tif,
         % .hdf5, .raw, .avi, and .mat files
-files = subdir(fullfile(foldername,'*.tif'));   % list of filenames (will search all subdirectories)
+       % foldername
+files = subdir(fullfile(foldername,'*.mat'));   % list of filenames (will search all subdirectories)
 FOV = [512,512];
 numFiles = length(files);
+
+
 
 %% motion correct (and save registered h5 files as 2d matrices (to be used in the end)..)
 % register files one by one. use template obtained from file n to
 % initialize template of file n + 1; 
 
-non_rigid = true; % flag for non-rigid motion correction
+non_rigid = false; % flag for non-rigid motion correction
 
 template = [];
 for i = 1:numFiles
     name = files(i).name;
     if non_rigid
         options_nonrigid = NoRMCorreSetParms('d1',512,'d2',512,'grid_size',[128,128],...
-            'overlap_pre',64,'mot_uf',4,'bin_width',200,'max_shift',24,'max_dev',8,'us_fac',50,...
+            'overlap_pre',64,'mot_uf',4,'bin_width',100,'max_shift',24,'max_dev',8,'us_fac',50,...
             'output_type','h5','h5_filename',[name(1:end-4),'_nr.h5']);
         [M,shifts,template] = normcorre_batch(name,options_nonrigid,template); 
         save([name(1:end-4),'_shifts_nr.mat'],'shifts','-v7.3');           % save shifts of each file at the respective subfolder
@@ -40,14 +63,13 @@ else
     h5_files = subdir(fullfile(foldername,'*_rig.h5'));
 end
 
-tsub = 5;                                        % degree of downsampling (for 30Hz imaging rate you can try also larger, e.g. 8-10)
+tsub = 10;                                 % degree of downsampling (for 30Hz imaging rate you can try also larger, e.g. 8-10)
 ds_filename = [foldername,'/ds_data.mat'];
-data_type = class(read_file(h5_files(1).name,1,1));
 data = matfile(ds_filename,'Writable',true);
-data.Y  = zeros([FOV,0],data_type);
-data.Yr = zeros([prod(FOV),0],data_type);
+data.Y  = zeros([FOV,0],'uint16');
+data.Yr = zeros([prod(FOV),0],'uint16');
 data.sizY = [FOV,0];
-F_dark = Inf;                                    % dark fluorescence (min of all data)
+
 batch_size = 2000;                               % read chunks of that size
 batch_size = round(batch_size/tsub)*tsub;        % make sure batch_size is divisble by tsub
 Ts = zeros(numFiles,1);                          % store length of each file
@@ -59,16 +81,22 @@ for i = 1:numFiles
     dims = info.Datasets.Dataspace.Size;
     ndimsY = length(dims);                       % number of dimensions (data array might be already reshaped)
     Ts(i) = dims(end);
-    Ysub = zeros(FOV(1),FOV(2),floor(Ts(i)/tsub),data_type);
-    data.Y(FOV(1),FOV(2),sum(floor(Ts/tsub))) = zeros(1,data_type);
-    data.Yr(prod(FOV),sum(floor(Ts/tsub))) = zeros(1,data_type);
+    Ysub = zeros(FOV(1),FOV(2),floor(Ts(i)/tsub),'uint16');
+    data.Y(FOV(1),FOV(2),sum(floor(Ts/tsub))) = uint16(0);
+    data.Yr(prod(FOV),sum(floor(Ts/tsub))) = uint16(0);
     cnt_sub = 0;
     for t = 1:batch_size:Ts(i)
-        Y = bigread2(name,t,min(batch_size,Ts(i)-t+1));    
-        F_dark = min(nanmin(Y(:)),F_dark);
+        Y = bigread2(name,t,min(batch_size,Ts(i)-t+1)); 
+         %AG filename(i), 1st frame in current chunk, last frame
+                                               %last frame is the smallest
+                                               %between chunk size and the
+                                               %remaining frames 
+       % [~,Y]=scanimage.util.opentif(name,'channel',1, 'frames', t:min(batch_size,Ts(i)-t+1));   %AG added instead the bigread above
+        
+        
         ln = size(Y,ndimsY);
         Y = reshape(Y,[FOV,ln]);
-        Y = cast(downsample_data(Y,'time',tsub),data_type);
+        Y = uint16(downsample_data(uint16(Y),'time',tsub));
         ln = size(Y,3);
         Ysub(:,:,cnt_sub+1:cnt_sub+ln) = Y;
         cnt_sub = cnt_sub + ln;
@@ -79,7 +107,7 @@ for i = 1:numFiles
     cnt = cnt + cnt_sub;
     data.sizY(1,3) = cnt;
 end
-data.F_dark = F_dark;
+
 %% now run CNMF on patches on the downsampled file, set parameters first
 
 sizY = data.sizY;                       % size of data matrix
@@ -105,17 +133,25 @@ options = CNMFSetParms(...
     'merge_thr',merge_thr,...                   % merging threshold
     'gSig',tau,... 
     'max_size_thr',300,'min_size_thr',10,...    % max/min acceptable size for each component
-    'spatial_method','regularized',...          % method for updating spatial components
+    'spatial_method','constrained',...
     'df_prctile',50,...                         % take the median of background fluorescence to compute baseline fluorescence 
     'fr',30/tsub...
     );
+
+
+%% manually refine components (optional) AG added that from demo_script
+refine_components = 0;%false;  % flag for manual refinement
+if refine_components
+    [Ain,Cin,center] = manually_refine_components(Y,Ain,Cin,center,Cn,tau,options);
+end
+    
 
 %% Run on patches (around 15 minutes)
 
 [A,b,C,f,S,P,RESULTS,YrA] = run_CNMF_patches(data,K,patches,tau,p,options);
 
 %% compute correlation image on a small sample of the data (optional - for visualization purposes) 
-Cn = correlation_image_max(single(data.Y),8);
+Cn = correlation_image(single(data.Y(:,:,1:min(2000,data.sizY(1,3)))),8);
 
 %% classify components
 [ROIvars.rval_space,ROIvars.rval_time,ROIvars.max_pr,ROIvars.sizeA,keep] = classify_components(data,A,C,b,f,YrA,options);
@@ -166,7 +202,7 @@ for i = 1:numFiles
     b_us{i} = max(mm_fun(f_us{i},h5_files(i).name) - A_keep*(C_us{i}*f_us{i}'),0)/norm(f_us{i})^2;
 end
 
-prctfun = @(data) prctfilt(data,30,1000,300);       % first detrend fluorescence (remove 20%th percentile on a rolling 1000 timestep window)
+prctfun = @(data) prctfilt(data,30,250,300);   %250 was 1000    % first detrend fluorescence (remove 20%th percentile on a rolling 1000 timestep window)
 F_us = cellfun(@plus,C_us,YrA_us,'un',0);           % cell array for projected fluorescence
 Fd_us = cellfun(prctfun,F_us,'un',0);               % detrended fluorescence
 
@@ -176,7 +212,20 @@ for i = 1:numFiles
 end
     
 F0 = cellfun(@plus, cellfun(@(x,y) x-y,F_us,Fd_us,'un',0), Ab_d,'un',0);   % add and get F0 fluorescence for each component
-F_df = cellfun(@(x,y) x./y, Fd_us, F0 ,'un',0);                            % DF/F value
+F_df = cellfun(@(x,y) x./y, Fd_us, F0 ,'un',0);     %AG replaced dF with F0                       % DF/F value
+
+%% saving the relevant variables and workplace
+foldername =  uigetdir('/data/Amos/GitHub/FilesToAnalyze', 'select the folder to save the analysis');
+cd(foldername)
+
+fname=files.name(length(files.folder)+2:end);
+%save the workplace
+save(strcat(fname(34:end),'__ALL.mat'));%34 is for: /data/Amos/GitHub/FilesToAnalyze/
+%save single variables
+save(strcat(fname(34:end),'__F_dF.mat'), 'F_df'); 
+save(strcat(fname(34:end),'__Coor.mat'), 'Coor'); 
+
+
 %% detrend each segment and then deconvolve
 
 
