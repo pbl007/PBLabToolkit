@@ -1,5 +1,4 @@
 function [M_final,shifts_g,template] = normcorre_batch(Y,options,template)
-
 % online motion correction through DFT subpixel registration
 % Based on the dftregistration.m function from Manuel Guizar and Jim Fienup
 
@@ -27,8 +26,13 @@ if isa(Y,'char')
         sizY = [tiffInfo(1).Height,tiffInfo(1).Width,T];
     elseif strcmpi(ext,'mat')
         filetype = 'mem';
-        Y = matfile(Y,'Writable',true);
-        sizY = size(Y);
+        existingMat = matfile(Y);
+        fields = fieldnames(existingMat);
+        relevantField = fields{2};
+        data = existingMat.(relevantField);
+        Y = matfile(Y, 'Writable',true);
+        %sizY = size(Y);
+        sizY = size(data);
         T = sizY(end);
     elseif strcmpi(ext,'hdf5') || strcmpi(ext,'h5');
         filetype = 'hdf5';
@@ -152,7 +156,9 @@ switch filetype
     case 'hdf5'
         Y_temp = bigread2(Y,1,init_batch);        
     case 'mem'
-        if nd == 2; Y_temp = Y.Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.Y(:,:,:,1:init_batch); end
+%        if nd == 2; Y_temp = Y.Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.Y(:,:,:,1:init_batch); end
+        if nd == 2; Y_temp = Y.(relevantField)(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.(relevantField)(:,:,:,1:init_batch); end
+
     case 'mat'
         if nd == 2; Y_temp = Y(:,:,perm); elseif nd == 3; Y_temp = Y(:,:,:,perm); end
     case 'raw'
@@ -261,8 +267,8 @@ for it = 1:iter
             case 'hdf5'
                 Ytm = single(h5read(Y,data_name,[ones(1,nd),t],[sizY(1:nd),min(t+bin_width-1,T)-t+1]));
             case 'mem'
-                if nd == 2; Ytm = single(Y.Y(:,:,t:min(t+bin_width-1,T))); end
-                if nd == 3; Ytm = single(Y.Y(:,:,:,t:min(t+bin_width-1,T))); end
+                if nd == 2; Ytm = single(Y.(relevantField)(:,:,t:min(t+bin_width-1,T))); end
+                if nd == 3; Ytm = single(Y.(relevantField)(:,:,:,t:min(t+bin_width-1,T))); end
             case 'mat'
                 if nd == 2; Ytm = single(Y(:,:,t:min(t+bin_width-1,T))); end
                 if nd == 3; Ytm = single(Y(:,:,:,t:min(t+bin_width-1,T))); end
@@ -324,7 +330,7 @@ for it = 1:iter
                             %M_temp = real(ifftn(Greg));
                             %M_temp = remove_boundaries(M_temp,output(3:end),'none',template{i,j,k});                            
                             %M_fin{i,j,k} = remove_boundaries(M_temp,output(3:end),'NaN',template{i,j,k},add_value);
-                            M_fin{i,j,k} = shift_reconstruct(Yt,shifts_temp(i,j,k,:),diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
+                            M_fin{i,j,k} = shift_reconstruct(Yt,shifts_temp(i,j,k,:),diff_temp(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'NaN',add_value);
                         end                                               
                     end
                 end
@@ -347,7 +353,7 @@ for it = 1:iter
                         for k = 1:length(zz_uf)
                             extended_grid = [max(xx_us(i)-overlap_post(1),1),min(xx_uf(i)+overlap_post(1),d1),max(yy_us(j)-overlap_post(2),1),min(yy_uf(j)+overlap_post(2),d2),max(zz_us(k)-overlap_post(3),1),min(zz_uf(k)+overlap_post(3),d3)];
                             I_temp = Yt(extended_grid(1):extended_grid(2),extended_grid(3):extended_grid(4),extended_grid(5):extended_grid(6));
-                            M_fin{i,j,k} = shift_reconstruct(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},options.boundary,add_value);
+                            M_fin{i,j,k} = shift_reconstruct(I_temp,shifts_up(i,j,k,:),diff_up(i,j,k),us_fac,Nr{i,j,k},Nc{i,j,k},Np{i,j,k},'NaN',add_value);
                         end
                     end
                 end
@@ -379,7 +385,6 @@ for it = 1:iter
             if nd == 2; mem_buffer(:,:,rem_mem-lY+1:rem_mem) = cast(Mf,data_type); end
             if nd == 3; mem_buffer(:,:,:,rem_mem-lY+1:rem_mem) = cast(Mf,data_type); end
         end
-        if it == iter
         switch lower(options.output_type)
             case 'mat'
                 if nd == 2; M_final(:,:,t:min(t+bin_width-1,T)) = Mf; end
@@ -400,7 +405,6 @@ for it = 1:iter
                     saveastiff(cast(mem_buffer(:,:,1:rem_mem),data_type),options.tiff_filename,opts_tiff);
                 end
         end        
-        end
         
         % update template
         fprintf('%i out of %i frames registered, iteration %i out of %i \n',t+lY-1,T,it,iter)
