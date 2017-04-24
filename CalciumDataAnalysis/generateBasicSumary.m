@@ -56,5 +56,5 @@ xlabel('Frame')
 
 %%
 filename = thisRow.dataFileName(1:strfind(thisRow.dataFileName,'.mat')-1)
-
+addpath('/data/MatlabCode/PBLabToolkit/External/altmany-export_fig-5be2ca4/export_fig.m');
 export_fig(fullfile(path2sourceDir,filename))

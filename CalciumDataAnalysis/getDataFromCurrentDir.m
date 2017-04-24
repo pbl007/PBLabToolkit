@@ -36,9 +36,10 @@ if isempty(ptr2mat)
 else
     load(fullfile(currentDir,ptr2mat.name))
     dataRow.dataFileName = ptr2mat.name;
-    dataRow.Coor = Coor;
+    dataRow.Coor = Coor_cur;
     dataRow.S_or = S_or;
     dataRow.C_df = C_df;
+    dataRow.Cn = Cn;
 end
     
 %get fps
@@ -51,14 +52,15 @@ else
 end
 
 %get max projection image
-ptr2tif = dir([currentDir filesep  '*proj*.tif']);
-
-if isempty(ptr2tif)
-    warning('Missing max projection file containing "proj" on its filename :-(')
-else
-    img = imread(fullfile(currentDir,ptr2tif.name));
-    dataRow.maxProjImg = img;
-end
+dataRow.maxProjImg = dataRow.Cn;
+% ptr2tif = dir([currentDir filesep  '*proj*.tif']);
+% 
+% if isempty(ptr2tif)
+%     warning('Missing max projection file containing "proj" on its filename :-(')
+% else
+%     img = imread(fullfile(currentDir,ptr2tif.name));
+%     dataRow.maxProjImg = dataRow.Cn;
+% end
 
 %get  Stimulus times
 ptr2mat = dir([currentDir filesep '*analog1*.mat']);
