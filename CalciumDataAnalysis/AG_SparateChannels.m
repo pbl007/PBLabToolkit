@@ -19,6 +19,10 @@ for idx = 1:length(files)
 end
 
 %% Delete files that prevent run_pipeline.m from working
-delete([foldername, '/*_rig.mat']);
-delete([foldername, '/*_rig.h5']);
-delete([foldername, '/*_nr.h5']);
+filesToDel = subdir(fullfile(foldername,'*_nr.h5'));
+filesToDel = [filesToDel; subdir(fullfile(foldername,'*_rig.h5'))];
+filesToDel = [filesToDel; subdir(fullfile(foldername,'*_rig.mat'))];
+
+for idx = 1:length(filesToDel)
+    delete(filesToDel.name);
+end

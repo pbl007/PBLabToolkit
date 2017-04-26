@@ -1,4 +1,4 @@
-function [T,EP_FILES_COMPILED] = AG_gatherCalciumMatFiles(path2sourceDir)
+function [EP_FILES_COMPILED] = AG_gatherCalciumMatFiles(path2sourceDir)
 %funcitons browses set of input directories and gathers results into "database"
 %
 %30/8/16  AG removed path2sourceDir as an input and added uigetfile for
@@ -29,7 +29,7 @@ function [T,EP_FILES_COMPILED] = AG_gatherCalciumMatFiles(path2sourceDir)
 
 
 %find out number of "animal ID" folders
-
+addpath('/data/MatlabCode/PBLabToolkit/External/altmany-export_fig-5be2ca4/export_fig.m');
 fprintf('Processing root data directory "%s" ',path2sourceDir);
 %for each directory, find out how many conditions
 dirContentAnimalIDLevel = dir(path2sourceDir);
@@ -143,6 +143,4 @@ for iIDs = 1 : numAnimalIds
 end%cycling animal ids
 %%
 fprintf('\nSaving data (.mat and .txt) to %s \n',path2sourceDir);
-T = struct2table(EP_FILES_COMPILED);
-%writetable(T,fullfile(path2groupledResults,'EP_FILES_COMPILED.txt'))
 save(fullfile(path2sourceDir,'EP_FILES_COMPILED.mat'),'EP_FILES_COMPILED')
