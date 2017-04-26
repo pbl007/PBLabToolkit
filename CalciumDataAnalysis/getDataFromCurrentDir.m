@@ -36,7 +36,7 @@ if isempty(ptr2mat)
 else
     load(fullfile(currentDir,ptr2mat.name))
     dataRow.dataFileName = ptr2mat.name;
-    dataRow.Coor = Coor_cur;
+    dataRow.Coor = Coor;
     dataRow.S_or = S_or;
     dataRow.C_df = C_df;
     dataRow.Cn = Cn;

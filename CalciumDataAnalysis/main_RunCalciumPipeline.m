@@ -4,7 +4,9 @@ close all;
 
 %% Step one: Create a .mat file for EP's algorithm to read
 addpath('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/');
-foldername = uigetdir('/data/David/new_exp_calcium_TAC/', 'Define a parent folder for all data. This will be results directory.');
+addpath('')
+foldername = uigetdir('/data/David/new_exp_calcium_TAC/', ...
+                      'Define a parent folder for all data. This will be results directory.');
 files = uipickfiles('Prompt', 'Please select folders and files for the analysis pipeline',...
                     'FilterSpec', [foldername, filesep, '*.tif'], 'Output', 'struct');
 
@@ -23,7 +25,7 @@ run('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/inputValidations.m');
 
 % Run EP's pipeline
 fprintf("Done. \nStarting EP's pipeline.\n");
-run('/data/MatlabCode/PBLabToolkit/External/ca_source_extraction/run_pipeline.m');
+run('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction/run_pipeline.m');
 
 %% Step three: Save and create EP_FILES_COMPILED
 % Save the .mat file

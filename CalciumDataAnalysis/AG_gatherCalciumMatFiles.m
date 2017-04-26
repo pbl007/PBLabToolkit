@@ -29,7 +29,7 @@ function [EP_FILES_COMPILED] = AG_gatherCalciumMatFiles(path2sourceDir)
 
 
 %find out number of "animal ID" folders
-addpath('/data/MatlabCode/PBLabToolkit/External/altmany-export_fig-5be2ca4/export_fig.m');
+addpath('/data/MatlabCode/PBLabToolkit/External/altmany-export_fig-5be2ca4/');
 fprintf('Processing root data directory "%s" ',path2sourceDir);
 %for each directory, find out how many conditions
 dirContentAnimalIDLevel = dir(path2sourceDir);
