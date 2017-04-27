@@ -19,8 +19,12 @@ colormap copper
 hold on
 myctr = zeros(size(Coor,1),2);
 for iCOOR = 1 : numel(Coor)
-    xi = Coor{iCOOR,1}(1,:);
-    yi = Coor{iCOOR,1}(2,:);
+    try
+        xi = Coor{iCOOR,1}(1,:);
+        yi = Coor{iCOOR,1}(2,:);
+    catch
+        continue
+    end
     myctr (iCOOR,:) = [mean(xi) mean(yi)];
     plot(xi,yi,'r.','markerSize',8)
     text(myctr(iCOOR,1),myctr(iCOOR,2),num2str(iCOOR))
@@ -56,5 +60,4 @@ xlabel('Frame')
 
 %%
 filename = thisRow.dataFileName(1:strfind(thisRow.dataFileName,'.mat')-1)
-
 export_fig(fullfile(path2sourceDir,filename))
