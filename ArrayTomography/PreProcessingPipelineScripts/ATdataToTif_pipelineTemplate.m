@@ -17,8 +17,8 @@ clc
 clear 
 %% Setup dataset structure
 expBaseName = 'Exp001';
-path2exp = '/Users/pb/Data/PBLab/DummyATdata/';
-path2TifFiles = '/Users/pb/Data/PBLab/DummyATdata/Tifs';
+path2exp = '';
+path2TifFiles = '';
 
 
 expStructure.expBaseName = 'Exp001';
@@ -32,6 +32,8 @@ expStructure.rowOffset_pxl = 1580;
 expStructure.nChannels = 4; %will attempt to load up to 4 channels, missing channel will generate warning
 expStructure.alingement_ChNum = 1; %point to DAPI of other selected (synaptic) channel to be used for alingment, it is the only entry to the table.
 expStructure.ribbonNumbers=[6 7];
+
+%% NOTHING TO CHANGE BELOW THIS LINE!
 
 %% generate table from experiment directory
 T = generateATdataTable(path2exp,path2TifFiles,expStructure);
