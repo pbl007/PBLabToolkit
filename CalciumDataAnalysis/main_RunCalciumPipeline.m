@@ -12,10 +12,11 @@ files = uipickfiles('Prompt', 'Please select folders and files for the analysis 
 
 fprintf('Separating channels from Tiffs and loading into memory... ');
 cd('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis');
+numOfChannels = 2;  % two data channels
 AG_SparateChannels;
 
 %% Script Parameters
-FOV = [512, 512];
+FOV = [header.xPixels, header.yPixels];
 numFiles = length(files);
 
 %% Step two: Run EP's algorithm. This includes the manual refinement of components
@@ -37,3 +38,6 @@ EP_FILES_COMPILED = AG_gatherCalciumMatFiles([foldername, filesep, ...
                                               'results', filesep]);
 
 %% Step four: Run the analysis scripts
+fprintf('Processing analog data... ');
+EP_FILES_COMPILED = AG_slice_EP_variables(EP_FILES_COMPILED, header);
+fprintf('Done.\n');

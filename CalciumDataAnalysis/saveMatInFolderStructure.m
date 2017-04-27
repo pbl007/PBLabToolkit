@@ -21,11 +21,17 @@ for idx = 1:length(files)
     FO = F0{idx};
     Fd_or = Fd_us{idx};
     dataFileName = files(idx).filename;
+    fps = 1 / mean(diff(header(idx).frameTimestamps_sec(1:2:end)));
     
-    % Save the files with the newly-created variables
+   
+    
+    % Save the files with the newly-created variables, and copy the analog
+    % channels to the corresponding folder
     filepath = fullfile(foldername, 'results', files(idx).id, files(idx).condition, ...
                         files(idx).day, files(idx).exp, files(idx).fov);
     mkdir(filepath{1});
-    save([filepath{1} filesep id{1}{1} '_data.mat'], 'Coor', 'S_or', ...
-        'F_Df', 'C_df', 'P_or', 'F0', 'Fd_or', 'dataFileName', 'Cn', '-v7.3'); 
+    save([filepath{1}, filesep, id{1}{1} '_data.mat'], 'Coor', 'S_or', ...
+         'F_Df', 'C_df', 'P_or', 'F0', 'Fd_or', 'dataFileName', 'Cn', ...
+         'fps', '-v7.3');
+    copyfile([files(idx).folder, filesep, '*', files(idx).fov{1}, '*analog.txt'], filepath{1});
 end
