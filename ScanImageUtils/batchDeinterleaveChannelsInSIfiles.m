@@ -5,5 +5,17 @@ function batchDeinterleaveChannelsInSIfiles(srcDir,destDir,nChannels,varargin)
 %to deinterleave frames into 'nChannels'. 
 %
 %
+<<<<<<< Updated upstream
 % Dependencies - TIFFStack
 % Pablo - Apr 2017
+=======
+% Dependencies - TIFFStack, Enhanced_rdir, all appear in ../external
+% Pablo - Apr 2017
+
+%%
+dirContent = rdir(fullfile(srcDir,'**/*.tif'));
+
+
+%ensure destination exists
+if ~isdir(destDir),mkdir(destDir);end
+>>>>>>> Stashed changes
