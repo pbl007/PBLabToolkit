@@ -56,7 +56,7 @@ if isa(Y,'char')
     end    
 elseif isobject(Y);
     filetype = 'mem';
-    sizY = size(Y,'Y');
+    sizY = size(Y);
     T = sizY(end);
 else % array loaded in memory
     filetype = 'mat';
@@ -65,7 +65,8 @@ else % array loaded in memory
     T = sizY(end);
 end
 
-nd = length(sizY)-1;                          % determine whether imaging is 2d or 3d
+nd = length(sizY)-1;  % determine whether imaging is 2d or 3d
+
 sizY = sizY(1:nd);
 %% set default parameters if not present
 
@@ -157,7 +158,7 @@ switch filetype
         Y_temp = bigread2(Y,1,init_batch);        
     case 'mem'
 %        if nd == 2; Y_temp = Y.Y(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.Y(:,:,:,1:init_batch); end
-        if nd == 2; Y_temp = Y.(relevantField)(:,:,1:init_batch); elseif nd == 3; Y_temp = Y.(relevantField)(:,:,:,1:init_batch); end
+        if nd == 2; Y_temp = squeeze(Y(:,:,1,1:init_batch)); elseif nd == 3; Y_temp = Y.(relevantField)(:,:,:,1:init_batch); end
 
     case 'mat'
         if nd == 2; Y_temp = Y(:,:,perm); elseif nd == 3; Y_temp = Y(:,:,:,perm); end

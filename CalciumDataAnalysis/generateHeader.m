@@ -8,12 +8,9 @@ endTime = str2num(endTime{1}{1});
 header.fps = 1 / (endTime - startTime);
 
 % Get timestamps of frames
-vecOfTimes = zeros(1, length(imageTags) / numOfChannels);
-for idx = 1:length(imageTags)
-   curTime =  regexp(imageTags(idx).ImageDescription, 'frameTimestamps_sec = ([\d.]+)', 'tokens');
-   vecOfTimes(idx) = str2double(curTime{1}{1});
-end
-header.frameTimestamps_sec = vecOfTimes;
+allCells = struct2cell(imageTags);
+stringarr = squeeze(string(allCells(7, :, :)));
+header.frameTimestamps_sec = str2double(extractBetween(stringarr, "frameTimestamps_sec = ", newline))';
 
 % Get FOV parameters
 header.xPixels = imageTags(1).Width;
