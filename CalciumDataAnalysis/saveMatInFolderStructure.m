@@ -20,6 +20,7 @@ for idx = 1:length(files)
     P_or = P_us{idx};
     FO = F0{idx};
     Fd_or = Fd_us{idx};
+    compiled = EP_FILES_COMPILED{idx};
     dataFileName = files(idx).filename;
     fps = 1 / mean(diff(header(idx).frameTimestamps_sec(1:2:end)));
     
@@ -32,6 +33,10 @@ for idx = 1:length(files)
     mkdir(filepath{1});
     save([filepath{1}, filesep, id{1}{1} '_data.mat'], 'Coor', 'S_or', ...
          'F_Df', 'C_df', 'P_or', 'F0', 'Fd_or', 'dataFileName', 'Cn', ...
-         'fps', '-v7.3');
-    copyfile([files(idx).folder, filesep, '*', files(idx).fov{1}, '*analog.txt'], filepath{1});
+         'fps', 'compiled', '-v7.3');
+    try
+        copyfile([files(idx).folder, filesep, '*', files(idx).fov{1}, '*analog.txt'], filepath{1});
+    catch
+        continue;
+    end
 end
