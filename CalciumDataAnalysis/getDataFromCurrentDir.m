@@ -36,7 +36,7 @@ if isempty(ptr2mat)
 else
     load(fullfile(currentDir,ptr2mat.name))
     dataRow.dataFileName = ptr2mat.name;
-    dataRow.Coor = Coor_cur;
+    dataRow.Coor = Coor;
     dataRow.S_or = S_or;
     dataRow.C_df = C_df;
     dataRow.Cn = Cn;
@@ -45,41 +45,22 @@ end
 %get fps
 if exist('fps','var')
     dataRow.fps = fps;
-elseif exist('FpS','var')
-    dataRow.fps = FpS;
 else
     warning('No fps (file per second) variable present')
 end
 
-%get max projection image
+% Get max projection image
 dataRow.maxProjImg = dataRow.Cn;
-% ptr2tif = dir([currentDir filesep  '*proj*.tif']);
-% 
-% if isempty(ptr2tif)
-%     warning('Missing max projection file containing "proj" on its filename :-(')
-% else
-%     img = imread(fullfile(currentDir,ptr2tif.name));
-%     dataRow.maxProjImg = dataRow.Cn;
-% end
 
-%get  Stimulus times
-ptr2mat = dir([currentDir filesep '*analog1*.mat']);
-
+% Get analog times
+ptr2mat = dir([currentDir filesep '*analog.txt']);
+analogFilename = [ptr2mat.folder, filesep, ptr2mat.name];
 if isempty(ptr2mat)
     warning('No Analog1 data here...')
 else
-    load(fullfile(currentDir,ptr2mat.name))
-    dataRow.StimVector = Ch3_analog.Ch3;
-end
-
-%get  running speed
-ptr2mat = dir([currentDir filesep '*analog2*.mat']);
-
-if isempty(ptr2mat)
-    warning('No Analog2 data here...')
-else
-    load(fullfile(currentDir,ptr2mat.name))
-    dataRow.SpeedVector = Ch4_analog.Ch4;
+    stimAndSpeed = load(analogFilename);
+    dataRow.speedVector = stimAndSpeed(:, 2);
+    dataRow.stimVector = stimAndSpeed(:, 1);
 end
 
 warning ON BACKTRACE

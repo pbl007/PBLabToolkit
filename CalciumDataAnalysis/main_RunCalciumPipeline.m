@@ -4,34 +4,45 @@ close all;
 
 %% Step one: Create a .mat file for EP's algorithm to read
 addpath('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/');
-foldername = uigetdir('/data/David/new_exp_calcium_TAC/', 'Define a parent folder for all data. This will be results directory.');
+addpath(genpath('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction'));
+foldername = uigetdir('/data/David/new_exp_calcium_TAC/', ...
+                      'Define a parent folder for all data. This will be the results directory.');
 files = uipickfiles('Prompt', 'Please select folders and files for the analysis pipeline',...
                     'FilterSpec', [foldername, filesep, '*.tif'], 'Output', 'struct');
 
 fprintf('Separating channels from Tiffs and loading into memory... ');
 cd('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis');
+numOfChannels = 2;  % two data channels
 AG_SparateChannels;
 
 %% Script Parameters
-FOV = [512, 512];
+FOV = [header.xPixels, header.yPixels];
 numFiles = length(files);
 
 %% Step two: Run EP's algorithm. This includes the manual refinement of components
-
 % Run validations on data
 run('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/inputValidations.m');
 
 % Run EP's pipeline
 fprintf("Done. \nStarting EP's pipeline.\n");
-run('/data/MatlabCode/PBLabToolkit/External/ca_source_extraction/run_pipeline.m');
+run('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction/run_pipeline.m');
 
-%% Step three: Save and create EP_FILES_COMPILED
-% Save the .mat file
-fprintf('Saving files...\n');
-saveMatInFolderStructure;
+if isTACFile
+    %% Step three: Create EP_FILES_COMPILED
+    % Save the .mat file
+    fprintf('Saving files...\n');
 
-% Create the structured array
-EP_FILES_COMPILED = AG_gatherCalciumMatFiles([foldername, filesep, ...
-                                              'results', filesep]);
+    % Create the structured array
+    EP_FILES_COMPILED = AG_gatherCalciumMatFiles([foldername, filesep, ...
+                                                  'results', filesep]);
 
-%% Step four: Run the analysis scripts
+    %% Step four: Run the analysis scripts
+    fprintf('Processing analog data... ');
+    EP_FILES_COMPILED = AG_slice_EP_variables(EP_FILES_COMPILED, header);
+    fprintf('Done.\n');
+
+    %% Finally - save the file
+    saveMatInFolderStructure;
+end
+
+

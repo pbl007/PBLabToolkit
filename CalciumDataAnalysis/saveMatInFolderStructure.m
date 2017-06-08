@@ -1,17 +1,6 @@
 % Save all files in the files struct in their suitable folder to create 
 % the correct folder structure
 
-%% Create the relevant Coor variable
-Coor_part = {};
-for idx = size(Coor, 1)
-   line = Coor{idx};
-   for fileNum = size(line, 1)
-       Coor_part = {Coor_part; line(fileNum)};
-       
-   end
-   
-end
-
 %% Loop through files and save them
 for idx = 1:length(files)
     % Get file placement in folder tree
@@ -31,21 +20,23 @@ for idx = 1:length(files)
     P_or = P_us{idx};
     FO = F0{idx};
     Fd_or = Fd_us{idx};
+    compiled = EP_FILES_COMPILED{idx};
     dataFileName = files(idx).filename;
-
-    Coor_cur = Coor;
-    % Problem with the dimensions of Coor - two files generate the same
-    % file.
-%     Coor_cur = cell(size(Coor, 1), 1);
-%     for cor = 1:size(Coor, 1)
-%     	line = Coor{cor};
-%         Coor_cur{cor} = line(idx, :);
-%     end
+    fps = 1 / mean(diff(header(idx).frameTimestamps_sec(1:2:end)));
     
-    % Save the files with the newly-created variables
+   
+    
+    % Save the files with the newly-created variables, and copy the analog
+    % channels to the corresponding folder
     filepath = fullfile(foldername, 'results', files(idx).id, files(idx).condition, ...
                         files(idx).day, files(idx).exp, files(idx).fov);
     mkdir(filepath{1});
-    save([filepath{1} filesep id{1}{1} '_data.mat'], 'Coor_cur', 'S_or', ...
-        'F_Df', 'C_df', 'P_or', 'F0', 'Fd_or', 'dataFileName', 'Cn', '-v7.3'); 
+    save([filepath{1}, filesep, id{1}{1} '_data.mat'], 'Coor', 'S_or', ...
+         'F_Df', 'C_df', 'P_or', 'F0', 'Fd_or', 'dataFileName', 'Cn', ...
+         'fps', 'compiled', '-v7.3');
+    try
+        copyfile([files(idx).folder, filesep, '*', files(idx).fov{1}, '*analog.txt'], filepath{1});
+    catch
+        continue;
+    end
 end

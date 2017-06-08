@@ -29,7 +29,7 @@ function [EP_FILES_COMPILED] = AG_gatherCalciumMatFiles(path2sourceDir)
 
 
 %find out number of "animal ID" folders
-addpath('/data/MatlabCode/PBLabToolkit/External/altmany-export_fig-5be2ca4/export_fig.m');
+addpath('/data/MatlabCode/PBLabToolkit/External/altmany-export_fig-5be2ca4/');
 fprintf('Processing root data directory "%s" ',path2sourceDir);
 %for each directory, find out how many conditions
 dirContentAnimalIDLevel = dir(path2sourceDir);
@@ -41,10 +41,14 @@ numAnimalIds = numel(dirContentAnimalIDLevel);
 %%
 
 
-dataRow = struct('animalID',[],'conditionID',[],'dataFileName',[],...
-    'daysAfterBaseline',[],'experimentType',[],'FOV',[],'fps',[],...
-    'maxProjImg',[],'Coor',[],'C_df',[],'S_or',[],'StimVector',[],'SpeedVector',[],...
-    'run_stim',[],'run_no_stim',[],'stand_stim',[],'stand_no_stim',[]);
+dataRow = struct('animalID', [], 'conditionID', [], 'dataFileName', [],...
+                 'daysAfterBaseline', [], 'experimentType', [], 'FOV', [], ...
+                 'fps', [], 'maxProjImg', [], 'Coor', [], 'C_df', [], ...
+                 'S_or', [], 'stimVector', [], 'speedVector',[], ...
+                 'S_or_run_stim',[], 'S_or_run_spont', [], 'S_or_run_fake', [], ...
+                 'S_or_stand_stim', [], 'S_or_stand_spont', [], 'S_or_stand_fake', [], ...
+                 'C_df_run_stim',[], 'C_df_run_spont', [], 'C_df_run_fake', [],  ...
+                 'C_df_stand_stim', [], 'C_df_stand_spont', [], 'C_df_stand_fake', []);
 
 EP_FILES_COMPILED =[];
 
@@ -121,10 +125,6 @@ for iIDs = 1 : numAnimalIds
                     thisRow.daysAfterBaseline = dirContentCurrentCond(iDAY).name;
                     thisRow.experimentType = experimentID;
                     thisRow.FOV = FOV;
-%                     thisRow.run_stim=run_stim;   ag commented 14/12/16
-%                     thisRow.run_no_stim=run_no_stim;
-%                     thisRow.stand_stim=stand_stim;
-%                     thisRow.stand_no_stim=stand_no_stim;
                     %generate summary figure
                     generateBasicSumary(path2sourceDir,thisRow)
                     
@@ -141,6 +141,9 @@ for iIDs = 1 : numAnimalIds
     end %cycling conditions (i.e. directoris inside animalID root directory)
     fprintf('\n')
 end%cycling animal ids
-%%
-fprintf('\nSaving data (.mat and .txt) to %s \n',path2sourceDir);
-save(fullfile(path2sourceDir,'EP_FILES_COMPILED.mat'),'EP_FILES_COMPILED')
+
+fprintf('Finished gathering Calcium files.\n');
+
+% %%
+% fprintf('\nSaving data (.mat and .txt) to %s \n',path2sourceDir);
+% save(fullfile(path2sourceDir,'EP_FILES_COMPILED.mat'),'EP_FILES_COMPILED')

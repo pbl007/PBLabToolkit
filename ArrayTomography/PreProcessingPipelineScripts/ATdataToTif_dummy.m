@@ -51,3 +51,5 @@ T=convertExpFromETStoTIF(T,expStructure);
 %% generate trackEMlayout for each cycle (volume)
 generateTrackEMlayoutFiles(T,expStructure,path2TifFiles);
 
+%% generate aligner layout text file
+generateAlignerLayoutFiles(T,expStructure,path2TifFiles)
