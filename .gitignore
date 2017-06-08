@@ -3,9 +3,5 @@
 *.wiki/
 *.DS_store
 *.tif
+*.nfs*
 
-External/ca_source_extraction/\.nfs000000001ca3882900000004
-
-External/ca_source_extraction/endoscope/demosdata_endoscope_results\.avi
-
-External/EP_ca_source_extraction/
