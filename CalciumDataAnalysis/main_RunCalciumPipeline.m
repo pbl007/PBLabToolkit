@@ -30,7 +30,9 @@ run('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_ex
 if isTACFile
     %% Step three: Create EP_FILES_COMPILED
     % Save the .mat file
-    fprintf('Saving files...\n');
+    fprintf('Saving files...\n')
+    createFolderStructure;
+    saveMatInFolderStructureWithoutCompiled;
 
     % Create the structured array
     EP_FILES_COMPILED = AG_gatherCalciumMatFiles([foldername, filesep, ...
@@ -40,9 +42,12 @@ if isTACFile
     fprintf('Processing analog data... ');
     EP_FILES_COMPILED = AG_slice_EP_variables(EP_FILES_COMPILED, header);
     fprintf('Done.\n');
+    
+    %% Step five: Dissect the data for "spike sorting" 
+    % EP_FILES_COMPILED = AG_SummarizeDay(EP_FILES_COMPILED);
 
     %% Finally - save the file
-    saveMatInFolderStructure;
+    saveMatInFolderStructureWithCompiled;
 end
 
 

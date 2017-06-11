@@ -16,22 +16,22 @@
 clc
 clear 
 %% Setup dataset structure
-expBaseName = 'Exp001';
-path2exp = '';
-path2TifFiles = '';
+expBaseName = 'Exp002';
+path2exp = '/data/AT_PROCESSING/Exp002/';
+path2TifFiles = '/data/AT_PROCESSING/Exp002';
 
 
-expStructure.expBaseName = 'Exp001';
+expStructure.expBaseName = 'Exp002';
 expStructure.nCyc = 2;
-expStructure.nRibbons = 2;
-expStructure.nCols = 1;
-expStructure.nRows = 2;
-expStructure.nSlabsInRibbon  = [2 2];
+expStructure.nRibbons = 1;
+expStructure.nCols = 5;
+expStructure.nRows = 12;
+expStructure.nSlabsInRibbon  = [13];
 expStructure.colOffset_pxl = 1490;
 expStructure.rowOffset_pxl = 1580;
 expStructure.nChannels = 4; %will attempt to load up to 4 channels, missing channel will generate warning
 expStructure.alingement_ChNum = 1; %point to DAPI of other selected (synaptic) channel to be used for alingment, it is the only entry to the table.
-expStructure.ribbonNumbers=[6 7];
+expStructure.ribbonNumbers=[9];
 
 %% NOTHING TO CHANGE BELOW THIS LINE!
 

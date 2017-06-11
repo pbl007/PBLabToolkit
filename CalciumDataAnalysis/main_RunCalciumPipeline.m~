@@ -27,17 +27,23 @@ run('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/inputValidations.m');
 fprintf("Done. \nStarting EP's pipeline.\n");
 run('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction/run_pipeline.m');
 
-%% Step three: Save and create EP_FILES_COMPILED
-% Save the .mat file
-fprintf('Saving files...\n');
+if isTACFile
+    %% Step three: Create EP_FILES_COMPILED
+    % Save the .mat file
+    fprintf('Saving files...\n');
+    SaveMatInFolderStruc
 
-% Create the structured array
-EP_FILES_COMPILED = AG_gatherCalciumMatFiles([foldername, filesep, ...
-                                              'results', filesep]);
+    % Create the structured array
+    EP_FILES_COMPILED = AG_gatherCalciumMatFiles([foldername, filesep, ...
+                                                  'results', filesep]);
 
-%% Step four: Run the analysis scripts
-fprintf('Processing analog data... ');
-EP_FILES_COMPILED = AG_slice_EP_variables(EP_FILES_COMPILED, header);
-fprintf('Done.\n');
+    %% Step four: Run the analysis scripts
+    fprintf('Processing analog data... ');
+    EP_FILES_COMPILED = AG_slice_EP_variables(EP_FILES_COMPILED, header);
+    fprintf('Done.\n');
+
+    %% Finally - save the file
+    saveMatInFolderStructure;
+end
 
 
