@@ -92,7 +92,7 @@ overlap = [8,8];                        % amount of overlap in each dimension (o
 
 patches = construct_patches(sizY(1:end-1),patch_size,overlap);
 K = 7;                                            % number of components to be found
-tau = 8;                                          % std of gaussian kernel (size of neuron) 
+tau = 20;                                          % std of gaussian kernel (size of neuron) 
 p = 0;                                            % order of autoregressive system (p = 0 no dynamics, p=1 just decay, p = 2, both rise and decay)
 merge_thr = 0.8;                                  % merging threshold
 sizY = data.sizY;

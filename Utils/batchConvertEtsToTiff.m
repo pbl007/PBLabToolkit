@@ -6,20 +6,31 @@
 %
 % Pablo - 
 
+% %% add path
+% PBLabToolKitRoot = '/data/MatlabCode/PBLabToolkit/';
+% 
+% addpath(fullfile(PBLabToolKitRoot,'External/imreadBioFormat'));
+% addpath(fullfile(PBLabToolKitRoot,'External/Enhanced_rdir'));
+% addpath(fullfile(PBLabToolKitRoot,'Utils'));
+
+
+%this change between servers...
+dataRoot = '/state/partition1/home/pb/data'; %stromboli
+
 
 %define source and target dirs
-ptr2etsDir = '/data/Alisa/Confocal_images/scanner_dungeon/';
-ptr2tifDir = '/data/Alisa/Confocal_images/scanner_dungeon_tiffs/';
+ptr2etsDir = fullfile(dataRoot,'/Alisa/Confocal_images/scanner_dungeon/HET_VS_KO_general');
+ptr2tifDir = fullfile(dataRoot,'/Alisa/Confocal_images/scanner_dungeon2_tiffs/');
 
 %nubmer of channels is the only parameter to set
-nChannels = 4;
+nChannels = 2;
 
 
 %ensure target dir exists
 if ~isdir(ptr2tifDir);mkdir(ptr2tifDir);end
 
 
-
+%%
 dirContent = rdir([ptr2etsDir '/**/*.ets']);
 nFiles = length(dirContent);
 
@@ -36,8 +47,12 @@ for iFILE = 1 : nFiles
         try
         img = uint16(imreadBF(path2ets,1,1,iCH));
         maketiff(img,path2tif);
+        
+        %create "thumbnail"
+        path2png = strrep(path2tif,'.tif','.png');
+        imwrite(imadjust(imresize(img,0.125)),path2png);
         catch 
-            warning('Failed to convert current channel');
+            warning('Failed to convert current channel - %s', lasterr); %#ok<LERR>
         end
     end
 end
