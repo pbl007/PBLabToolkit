@@ -3,6 +3,7 @@ clearvars;
 close all;
 
 %% Step one: Create a .mat file for EP's algorithm to read
+addpath('/data/MatlabCode/PBLabToolkit/External/NoRMCorre/');
 addpath('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/');
 addpath(genpath('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction'));
 foldername = uigetdir('/data/David/new_exp_calcium_TAC/', ...

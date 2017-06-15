@@ -230,7 +230,7 @@ Sigb = zeros(2,2);
 
 tauMoves = [0 0];
 tau_min = 0;
-tau_max = 500;
+tau_max = 700;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
