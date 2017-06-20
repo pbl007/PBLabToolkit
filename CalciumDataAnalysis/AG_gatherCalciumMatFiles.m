@@ -1,4 +1,4 @@
-function [EP_FILES_COMPILED] = AG_gatherCalciumMatFiles(path2sourceDir)
+function [EP_FILES_COMPILED] = AG_gatherCalciumMatFiles(path2sourceDir, fovNum)
 %funcitons browses set of input directories and gathers results into "database"
 %
 %30/8/16  AG removed path2sourceDir as an input and added uigetfile for
@@ -109,13 +109,13 @@ for iIDs = 1 : numAnimalIds
                 end
                 
                 numFOVinCurrentEXP = numel(dirContentCurrentEXP);
-                for iFOV = 1 : numFOVinCurrentEXP
+                for iFOV = fovNum
                     path2CurrentFOV = fullfile(path2CurrentAnimalID,dirContentCurrentAnimalID(iCOND).name,...
                         dirContentCurrentCond(iDAY).name,dirContentCurrentDAY(iEXP).name,...
-                        dirContentCurrentEXP(iFOV).name  );
-                    fprintf('\n\t\t\t|-->FOV "%s"\t\t\t(%d/%d)',dirContentCurrentEXP(iFOV).name,iFOV,numFOVinCurrentEXP);
+                        dirContentCurrentEXP(1).name  );
+                    fprintf('\n\t\t\t|-->FOV "%s"\t\t\t(%d/%d)',dirContentCurrentEXP(1).name,iFOV,numFOVinCurrentEXP);
                     
-                    FOV = dirContentCurrentEXP(iFOV).name;
+                    FOV = dirContentCurrentEXP(1).name;
                     FOV = FOV(strfind(FOV,'_')+1:end);
                    
                     %finally got to last leaf - GET DATA HERE

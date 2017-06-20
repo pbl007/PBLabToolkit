@@ -4,10 +4,13 @@
 % run_pipleine.m.
 
 %% Preps
-addpath('/data/MatlabCode/ScanImage/SI2016bR0_2016-12-12_dd0af29383');
-addpath('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction/utilities/');
-addpath('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction/utilities/memmap');
-addpath('/data/MatlabCode/PBLabToolkit/External/TIFFStack');
+
+addpath([prefix '/data/MatlabCode/ScanImage/SI2016bR0_2016-12-12_dd0af29383']);
+addpath([prefix '/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction/utilities/']);
+addpath([prefix '/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction/utilities/memmap']);
+addpath([prefix '/data/MatlabCode/PBLabToolkit/External/TIFFStack']);
+addpath([prefix '/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/']);
+addpath(genpath([prefix '/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction']));
 
 %% Loops over each file and loads it into memory
 header = struct('fps', [], 'frameTimestamps_sec', [], ...

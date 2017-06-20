@@ -18,15 +18,20 @@ parfor_progress(nTasks)
 parfor iTASK = 1 : nTasks
     for iCH = 1 : nChannels
         try
-%             if exist(T.pathToTIF{iTASK},'file');end
+            %             if exist(T.pathToTIF{iTASK},'file');end
             path2ets = T.pathToETS{iTASK};
             img = uint16(imreadBF(path2ets,1,1,iCH));
-            maketiff(img,T.pathToTIF{iTASK});
+            
+            thisChTifName = T.pathToTIF{iTASK};
+            ChDelim =  regexp(thisChTifName,'[0-9]+.tif');
+            thisChTifName(ChDelim:ChDelim+1)=sprintf('%02d',iCH);
+            maketiff(img,thisChTifName);
             %log successful
             status = 1;
         catch
             %log failure
             status = -1;
+            warning('Failed to convert channel %d',iCH);
         end
         taskProgress(iTASK,iCH)=status;
     end

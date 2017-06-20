@@ -29,8 +29,8 @@ expStructure.nRows = 12;
 expStructure.nSlabsInRibbon  = [13];
 expStructure.colOffset_pxl = 1490;
 expStructure.rowOffset_pxl = 1580;
-expStructure.nChannels = 4; %will attempt to load up to 4 channels, missing channel will generate warning
-expStructure.alingement_ChNum = 1; %point to DAPI of other selected (synaptic) channel to be used for alingment, it is the only entry to the table.
+expStructure.nChannels = 3; %will attempt to load up to 4 channels, missing channel will generate warning
+expStructure.alingement_ChNum = 2; %point to DAPI of other selected (synaptic) channel to be used for alingment, it is the only entry to the table.
 expStructure.ribbonNumbers=[9];
 
 %% NOTHING TO CHANGE BELOW THIS LINE!

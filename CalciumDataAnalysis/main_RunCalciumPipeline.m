@@ -1,18 +1,26 @@
+
 %% CALCIUM ANALYSIS PIPELINE
 clearvars;
 close all;
 
 %% Step one: Create a .mat file for EP's algorithm to read
 addpath('/data/MatlabCode/PBLabToolkit/External/NoRMCorre/');
-addpath('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/');
-addpath(genpath('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction'));
-foldername = uigetdir('/data/David/new_exp_calcium_TAC/', ...
-                      'Define a parent folder for all data. This will be the results directory.');
+if size(lastwarn, 2) > 0 
+    prefix = '/state/partition1/home/pblab';
+    addpath([prefix '/data/MatlabCode/PBLabToolkit/External/NoRMCorre/']);
+else
+    prefix = '';
+end
+
+foldername = uigetdir([prefix '/data/David/THY_1_GCaMP_BEFOREAFTER_TAC_290517/'], ...
+                     'Define a parent folder for all data. This will be the results directory.');
+
 files = uipickfiles('Prompt', 'Please select folders and files for the analysis pipeline',...
                     'FilterSpec', [foldername, filesep, '*.tif'], 'Output', 'struct');
 
 fprintf('Separating channels from Tiffs and loading into memory... ');
-cd('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis');
+
+cd([prefix '/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis']);
 numOfChannels = 2;  % two data channels
 AG_SparateChannels;
 
@@ -22,11 +30,11 @@ numFiles = length(files);
 
 %% Step two: Run EP's algorithm. This includes the manual refinement of components
 % Run validations on data
-run('/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/inputValidations.m');
+run([prefix '/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis/inputValidations.m']);
 
 % Run EP's pipeline
 fprintf("Done. \nStarting EP's pipeline.\n");
-run('/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction/run_pipeline.m');
+run([prefix '/data/MatlabCode/PBLabToolkit/External/EP_ca_source_extraction/ca_source_extraction/run_pipeline.m']);
 
 if isTACFile
     %% Step three: Create EP_FILES_COMPILED
@@ -34,10 +42,10 @@ if isTACFile
     fprintf('Saving files...\n')
     createFolderStructure;
     saveMatInFolderStructureWithoutCompiled;
-
+    fovNum = str2double(files(1).fov{1}(end));
     % Create the structured array
     EP_FILES_COMPILED = AG_gatherCalciumMatFiles([foldername, filesep, ...
-                                                  'results', filesep]);
+                                                  'results', filesep], fovNum);
 
     %% Step four: Run the analysis scripts
     fprintf('Processing analog data... ');

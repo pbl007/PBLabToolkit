@@ -1,4 +1,4 @@
-%batch convert CellSens data (recursive search for ets files);
+%batch convert CellSens data (recursive search for ets files);v
 %Dependencies 
 %    - imreadBF     - PBLabToolkit/External/imreadBioFormat/
 %    - rdir              - PBLabToolkit/External/Enhanced_rdir/
@@ -15,15 +15,15 @@
 
 
 %this change between servers...
-dataRoot = '/state/partition1/home/pb/data'; %stromboli
+dataRoot = '/data'; %stromboli
 
 
 %define source and target dirs
-ptr2etsDir = fullfile(dataRoot,'/Alisa/Confocal_images/scanner_dungeon/HET_VS_KO_general');
-ptr2tifDir = fullfile(dataRoot,'/Alisa/Confocal_images/scanner_dungeon2_tiffs/');
+ptr2etsDir = fullfile(dataRoot,'/Alisa/Confocal_images/scanner_dungeon/Alisa_DCX');
+ptr2tifDir = fullfile(dataRoot,'/Alisa/Confocal_images/scanner_dungeon_tiffs1/');
 
 %nubmer of channels is the only parameter to set
-nChannels = 2;
+nChannels = 3;
 
 
 %ensure target dir exists
