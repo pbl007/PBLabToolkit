@@ -1,4 +1,5 @@
-%% Loop through files to create the folder structure 
+%% Loop through files to create the folder structure
+filepaths = string(length(files));
 for idx = 1:length(files) 
     % Get file placement in folder tree 
     curFullFilename = files(idx).filename; 
@@ -20,4 +21,6 @@ for idx = 1:length(files)
     catch 
         continue; 
     end 
+    filepaths(idx) = [filepath{1}, filesep, id{1}{1}, ...
+                      sprintf('_data_%d.mat', idx)];
 end

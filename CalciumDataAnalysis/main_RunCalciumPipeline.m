@@ -21,7 +21,7 @@ files = uipickfiles('Prompt', 'Please select folders and files for the analysis 
 fprintf('Separating channels from Tiffs and loading into memory... ');
 
 cd([prefix '/data/MatlabCode/PBLabToolkit/CalciumDataAnalysis']);
-numOfChannels = 2;  % two data channels
+numOfChannels = 2;  % number of data channels
 AG_SparateChannels;
 
 %% Script Parameters
@@ -42,11 +42,9 @@ if isTACFile
     fprintf('Saving files...\n')
     createFolderStructure;
     saveMatInFolderStructureWithoutCompiled;
-    fovNum = str2double(files(1).fov{1}(end));
     % Create the structured array
-    EP_FILES_COMPILED = AG_gatherCalciumMatFiles([foldername, filesep, ...
-                                                  'results', filesep], fovNum);
-
+    EP_FILES_COMPILED = loadData(files, filepaths, header);
+    
     %% Step four: Run the analysis scripts
     fprintf('Processing analog data... ');
     EP_FILES_COMPILED = AG_slice_EP_variables(EP_FILES_COMPILED, header);
