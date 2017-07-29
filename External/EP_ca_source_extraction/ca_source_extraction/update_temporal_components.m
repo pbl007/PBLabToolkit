@@ -384,9 +384,9 @@ else
                 C(ii,:) = full(cc');
                 %YrA(:,ii) = YrA(:,ii) - C(ii,:)';
             end
-            if mod(jj,10) == 0
-                fprintf('%i out of total %i temporal components updated \n',jj,K);
-            end
+%             if mod(jj,10) == 0
+%                 fprintf('%i out of total %i temporal components updated \n',jj,K);
+%             end
         end
         if norm(Cin - C,'fro')/norm(C,'fro') <= 1e-3
             % stop if the overall temporal component does not change by much

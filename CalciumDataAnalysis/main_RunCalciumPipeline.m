@@ -52,9 +52,12 @@ if isTACFile
     
     %% Step five: Dissect the data for "spike sorting" 
     % EP_FILES_COMPILED = AG_SummarizeDay(EP_FILES_COMPILED);
-
+    
     %% Finally - save the file
     saveMatInFolderStructureWithCompiled;
 end
+
+%% Create nice-looking figures
+genArticleFigure;
 
 

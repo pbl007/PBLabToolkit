@@ -14,7 +14,7 @@ nTasks = size(T,1);
 taskProgress = zeros(nTasks,nChannels); %keep status tab
 
 %%
-parfor_progress(nTasks)
+%parfor_progress(nTasks)
 parfor iTASK = 1 : nTasks
     for iCH = 1 : nChannels
         try
@@ -28,14 +28,14 @@ parfor iTASK = 1 : nTasks
             maketiff(img,thisChTifName);
             %log successful
             status = 1;
-        catch
+        catch ME
             %log failure
             status = -1;
-            warning('Failed to convert channel %d',iCH);
+            warning('Failed to convert channel %d, reason: %s',iCH, ME.message);
         end
         taskProgress(iTASK,iCH)=status;
     end
-    parfor_progress;
+    %parfor_progress;
 end
 
 %update progress table (can't be done inside parfor...)

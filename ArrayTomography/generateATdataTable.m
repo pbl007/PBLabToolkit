@@ -41,7 +41,7 @@ alingement_ChNum = expStructure.alingement_ChNum;
 ribbonNumbers = expStructure.ribbonNumbers;
 %% recursively get all ets files, this will wrok also if ribbon hierarchy is not present.
 fprintf('\nRecursively looking for ets files in directory....')
-rDirContent = rdir([path2exp,'**/*.ets']);
+rDirContent = rdir([path2exp,'/*/*/*.ets']);
 fprintf('Done!');
 %check that number of folders match number of expected tiles
 nLayers = sum(nSlabsInRibbon); % each tissue slab represent a z-position or layer

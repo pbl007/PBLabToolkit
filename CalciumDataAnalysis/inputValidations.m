@@ -1,12 +1,15 @@
 for idx = 1:numFiles
     %% Verify data dimensions
-    if mod(size(files(idx).name, 3), 10) ~= 0
-       error('Wrong size for third dimension of data.');
+    modulu = mod(size(files(idx).name, 3), 10);
+    if modulu ~= 0
+       warning('Wrong size for third dimension of data. Cropping the stack automatically.');
+       files(idx).name = files(idx).name(:, :, 1:end-modulu);
     end
 
     if size(files(idx).name, 1) ~= FOV(1)
        warning('Wrong size for first dimension of data. Make sure it equals %d.\n Tiff stack will not be analyzed.', FOV(1));
        files(idx) = [];
+
     end
 
     if size(files(idx).name, 2) ~= FOV(2)

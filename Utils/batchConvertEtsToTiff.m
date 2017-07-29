@@ -19,11 +19,11 @@ dataRoot = '/data'; %stromboli
 
 
 %define source and target dirs
-ptr2etsDir = fullfile(dataRoot,'/Alisa/Confocal_images/scanner_dungeon/HET_KO_control');
-ptr2tifDir = fullfile(dataRoot,'/Alisa/Confocal_images/scanner_dungeon_tiffs3/');
+ptr2etsDir = fullfile(dataRoot,'/data/Alisa/Confocal_images/scanner_dungeon/viptd_neta');
+ptr2tifDir = fullfile(dataRoot,'/Alisa/Confocal_images/scanner_dungeon/viptd_neta');
 
 %nubmer of channels is the only parameter to set
-nChannels = 2;
+nChannels = 3;
 
 
 %ensure target dir exists

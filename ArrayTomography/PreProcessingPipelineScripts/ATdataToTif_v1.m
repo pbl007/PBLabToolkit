@@ -10,8 +10,8 @@
 % Pablo - 20170131
 
 %% Setup dataset structure
-path2data = '/Volumes/AT/20170201_1p4_R16_Cyc2';
-path2TifFiles = '/Volumes/AT/20170201_1p4_R16_Cyc2_tifs';
+path2data = '/export/home/pb/data/AT_PROCESSING/Exp002/Cyc_01/R11_1';
+path2TifFiles = '/export/home/pb/data/AT_PROCESSING/Exp002/Cyc_01/R11_1_tifs';
 
 if ~isdir(path2tif);mkdir(path2tif);end
 

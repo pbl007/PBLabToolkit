@@ -1,5 +1,5 @@
 %% Loop through files to create the folder structure
-filepaths = string(length(files));
+filepaths = string();
 for idx = 1:length(files) 
     % Get file placement in folder tree 
     curFullFilename = files(idx).filename; 
@@ -19,8 +19,9 @@ for idx = 1:length(files)
     try 
         copyfile([files(idx).folder, filesep, '*', files(idx).fov{1}, '*analog.txt'], filepath{1}); 
     catch 
-        continue; 
+        warning('Copy failed');
     end 
+        
     filepaths(idx) = [filepath{1}, filesep, id{1}{1}, ...
                       sprintf('_data_%d.mat', idx)];
 end

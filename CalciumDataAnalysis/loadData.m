@@ -22,7 +22,7 @@ for idx = 1:size(filepaths, 1)
     compiled(idx).fps = header.fps;
     compiled(idx).animalID = files(idx).id;
     compiled(idx).conditionID = files(idx).condition;
-    compiled(idx).daysAfterBaseline = files(idx).days;
+    compiled(idx).daysAfterBaseline = files(idx).day{1};
     compiled(idx).experimentType = files(idx).exp;
     compiled(idx).FOV = files(idx).fov;
     
@@ -30,8 +30,8 @@ for idx = 1:size(filepaths, 1)
     ptr2mat = dir(char(filepaths(idx)));
     analogFilename = dir([ptr2mat.folder, filesep, '*_analog.txt']);
 
-    if isempty(ptr2mat)
-        warning('No Analog1 data here...')
+    if isempty(analogFilename)
+        warning('No analog data for file number %d\n', idx)
     else
         stimAndSpeed = load([analogFilename.folder, filesep, analogFilename.name]);
         compiled(idx).speedVector = stimAndSpeed(:, 2);

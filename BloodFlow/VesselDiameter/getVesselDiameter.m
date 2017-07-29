@@ -1,9 +1,11 @@
-function [mv_mpP]=getVesselDiameter(fname,expInfo)
+function [mv_mpP]=getVesselDiameter(orig_fname, fname, theimage, expInfo)
 %this function takes a tiff file (movie) and an analog ascii file, and
 %extracts the diameters - original by Patrick Drew
 %
 % Inputs:
-% fname - string - FULL path to multitiff
+% orig_fname - string - full path to multitiff before splitting it to two
+% channels.   
+% fname - string - FULL path to multitiff after the split
 % expInfo - struct - description of parameters:
 %               .Magnification - double
 %               .Rotation - double
@@ -13,22 +15,24 @@ function [mv_mpP]=getVesselDiameter(fname,expInfo)
 %               .micronsPerPixelAt1x - double, how many microns in FOV at x1 magnification
 %               .animal_ID, string
 %               .FOV_ID, string indicates field of view identifier
+% theimage - the data loade into memory
 
 
 %Read header and take further action based on header information
 %Modified by Pablo Blinder
 
 %open tif file and display first frame
-
-theimage=imread(fname,'TIFF','Index',1);
+% cd='Z:\Amos\optogenetics\29Jun17_opto';%AG added
+% theimage=imread(fname,'TIFF','Index',1);
 figure(2)
-imagesc(double(theimage))
+imagesc(double(theimage(:, :, 1)))
 axis image
 axis off
 
+
 %walking_analog=load(analog_trace);
 %get file info
-Info = imfinfo(fname);
+Info = imfinfo(orig_fname);
 mv_mpP(1).Header.Filename=Info(1).Filename;
 mv_mpP(1).Header.Frame_Width = num2str(Info(1).Width);
 mv_mpP(1).Header.Frame_Height = num2str(Info(1).Height);
@@ -129,7 +133,7 @@ if (nvessels>0)
         end
         mv_mpP(vesselnumber).Xfactor=Xfactor;
     end
-    mv_mpP=GetDiametersFromMovie_Tiff_01(mv_mpP, fname);
+    mv_mpP=GetDiametersFromMovie_Tiff_01(mv_mpP, theimage);
     %    mv_mpP(1).Analog.walking=walking_analog;
     
 end
@@ -240,9 +244,11 @@ axis square
 end
 
 
-function mv_mpP=GetDiametersFromMovie_Tiff_01(mv_mpP, fname)
+% function mv_mpP=GetDiametersFromMovie_Tiff_01(mv_mpP, fname)
+% Changed by Hagai so the file won't have to be read twice (!)
+function mv_mpP=GetDiametersFromMovie_Tiff_01(mv_mpP, stack)
 %this function opens the tiff file and gets the  vessel projections from the defined polygons
-mv_mpP(1).first_frame=imread(fname,'TIFF','Index',1)
+mv_mpP(1).first_frame = stack(:, :, 1);
 
 %mp2mat_getChannelData_narrow_noplot(mpfile,1,mv_mpP(1), [1 1],[1 mv_mpP(1).xsize]);
 fft_first_frame=fft2(double(mv_mpP(1).first_frame));
@@ -254,7 +260,7 @@ for mv=1:length(mv_mpP)
     atand(diff(mv_mpP(mv).Vessel.vessel_line.position.xy(:,1))/diff(mv_mpP(mv).Vessel.vessel_line.position.xy(:,2)))
     
    for theframe=(mv_mpP(mv).startframe):mv_mpP(mv).endframe
-        raw_frame =imread(fname,'Index',theframe);%(mp2mat_getChannelData_narrow_noplot(mpfile,1,mv_mpP(1), [theframe theframe],[1 mv_mpP(1).xsize]));
+        raw_frame =stack(:, :, theframe);%(mp2mat_getChannelData_narrow_noplot(mpfile,1,mv_mpP(1), [theframe theframe],[1 mv_mpP(1).xsize]));
         fft_raw_frame=fft2(double(raw_frame));
         if mv==1
             [mv_mpP(mv).pixel_shift(:,theframe), Greg]=dftregistration(fft_first_frame,fft_raw_frame,1);
@@ -298,11 +304,11 @@ data = double(data(:));     % make sure this is column, and cast to double
 % smooth data, if appropriate
 if nargin < 2
     % smoothing not passed in, set to default (none)
-    smoothing = 1
+    smoothing = 1;
 end
 
 if smoothing > 1
-    data = conv2(data,rectwin(smoothing) ./ smoothing,'valid')
+    data = conv2(data,rectwin(smoothing) ./ smoothing,'valid');
 end
 
 % subtract out baseline
