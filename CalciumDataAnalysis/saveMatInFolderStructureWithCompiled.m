@@ -11,6 +11,7 @@ for idx = 1:length(files)
     P_or = P_us{idx};
     FO = F0{idx};
     Fd_or = Fd_us{idx};
+    coorKeep = Coor(keep);
     compiled = EP_FILES_COMPILED(idx);
     dataFileName = files(idx).filename;
     fps = 1 / mean(diff(header(idx).frameTimestamps_sec(1:2:end)));
@@ -24,5 +25,5 @@ for idx = 1:length(files)
                     
     save([filepath{1}, filesep, id{1}{1} '_data_with_compiled.mat'], 'Coor', 'S_or', ...
          'F_Df', 'C_df', 'P_or', 'F0', 'Fd_or', 'dataFileName', 'Cn', ...
-         'fps', 'compiled', '-v7.3');
+         'fps', 'compiled', 'keep', 'folder_name', '-v7.3');
 end

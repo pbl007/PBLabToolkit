@@ -42,7 +42,7 @@ else
 end
     
 fr = 30;                                         % frame rate
-tsub = 10;                                        % degree of downsampling (for 30Hz imaging rate you can try also larger, e.g. 8-10)
+tsub = 5;                                        % degree of downsampling (for 30Hz imaging rate you can try also larger, e.g. 8-10)
 ds_filename = [foldername,'/ds_data.mat'];
 data_type = class(read_file(h5_files(1).name,1,1));
 data = matfile(ds_filename,'Writable',true);
@@ -85,11 +85,11 @@ data.F_dark = F_dark;
 %% now run CNMF on patches on the downsampled file, set parameters first
 
 sizY = data.sizY;                       % size of data matrix
-patch_size = [64,64];                   % size of each patch along each dimension (optional, default: [32,32])
-overlap = [8,8];                        % amount of overlap in each dimension (optional, default: [4,4])
+patch_size = [32,32];                   % size of each patch along each dimension (optional, default: [32,32])
+overlap = [4,4];                        % amount of overlap in each dimension (optional, default: [4,4])
 
 patches = construct_patches(sizY(1:end-1),patch_size,overlap);
-K = 70;                                            % number of components to be found
+K = 10;                                            % number of components to be found
 tau = 10;                                          % std of gaussian kernel (size of neuron) 
 p = 0;                                            % order of autoregressive system (p = 0 no dynamics, p=1 just decay, p = 2, both rise and decay)
 merge_thr = 0.8;                                  % merging threshold

@@ -1,7 +1,7 @@
-
 %% CALCIUM ANALYSIS PIPELINE
 clearvars;
 close all;
+lastwarn('');
 
 %% Step one: Create a .mat file for EP's algorithm to read
 addpath('/data/MatlabCode/PBLabToolkit/External/NoRMCorre/');
@@ -42,7 +42,7 @@ if isTACFile
     fprintf('Saving files...\n')
     createFolderStructure;
     saveMatInFolderStructureWithoutCompiled;
-    % Create the structured array
+    % Create the structured arrayg
     EP_FILES_COMPILED = loadData(files, filepaths, header);
     
     %% Step four: Run the analysis scripts
