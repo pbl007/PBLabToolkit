@@ -15,7 +15,7 @@ numOfChannels = 2;
 channelOfVessels = 2;
 expInfo.animal_ID='300';
 expInfo.FOV_ID='1';
-expInfo.nVessels = 7;
+expInfo.nVessels = 4;
 
 %% 
 fprintf('Opening file...\n');
@@ -26,6 +26,19 @@ micPerPixelAt1x = header.SI.hRoiManager.scanZoomFactor * (header.SI.hRoiManager.
 %% Read the stack into memory and save it as a separate file
 relData = data(:,:,channelOfVessels:numOfChannels:end);
 
+%% Save also the other channel's mean image
+otherChannel = 0;
+if numOfChannels == 2
+    if channelOfVessels == 2
+        otherChannel = 1;
+    else
+        otherChannel = 2;
+    end
+    otherData = data(:, :, otherChannel:numOfChannels:end);
+    otherDataMeanImage = mean(data, 3);
+end
+   
+%%
 % Convert to uint16
 relDataUint = int32(relData) + abs(int32((min(min(min(relData))))));
 relDataUint = uint16(relDataUint);
@@ -48,6 +61,12 @@ expInfo.micronsPerPixelAt1x=micPerPixelAt1x;
 
 mv_mpP = getVesselDiameter(fname, fname_after_split, relDataUint, expInfo);
 
+%% Add the other channel's image to the struct
+if otherChannel ~= 0
+    mv_mpP(1).otherChannel = otherDataMeanImage;
+end
+
+%%
 %the diameter data is stored in 
 %       mv_mpP.Vessel.diameter
 %       mv_mpP.Vessel.mean_diameter
