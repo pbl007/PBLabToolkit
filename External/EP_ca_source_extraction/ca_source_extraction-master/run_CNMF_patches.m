@@ -104,7 +104,7 @@ if memmaped
         patch_idx = patch_to_indices(patches{i});
         Yp = data.Y(patch_idx{:},:);
         RESULTS(i) = process_patch(Yp,F_dark, K, p, tau, options);
-        fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
+        % fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
     end
 
 else  % avoid copying the entire dataset to each worker, for in-memory data
@@ -116,7 +116,7 @@ else  % avoid copying the entire dataset to each worker, for in-memory data
     for i = 1:n_patches
         [idx, value] = fetchNext(future_results);
         RESULTS(idx) = value;
-        fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
+        % fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
     end
 end
 

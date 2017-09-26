@@ -1,13 +1,5 @@
 % complete pipeline for calcium imaging data pre-processing
-clear;
-addpath(genpath('../NoRMCorre'));               % add the NoRMCorre motion correction package to MATLAB path
 gcp;        % start a parallel engine
-foldername = '';   
-        % folder where all the files are located. Currently supported .tif,
-        % .hdf5, .raw, .avi, and .mat files
-files = subdir(fullfile(foldername,'*.tif'));   % list of filenames (will search all subdirectories)
-FOV = [512,512];
-numFiles = length(files);
 
 %% motion correct (and save registered h5 files as 2d matrices (to be used in the end)..)
 % register files one by one. use template obtained from file n to
@@ -18,19 +10,19 @@ non_rigid = true;           % flag for non-rigid motion correction
 
 template = [];
 for i = 1:numFiles
-    fullname = files(i).name;
+    fullname = files(i).filename;
     [folder_name,file_name,ext] = fileparts(fullname);    
     if motion_correct    
         if non_rigid
             options_nonrigid = NoRMCorreSetParms('d1',512,'d2',512,'grid_size',[128,128],...
                 'overlap_pre',64,'mot_uf',4,'bin_width',200,'max_shift',24,'max_dev',8,'us_fac',50,...
                 'output_type','h5','h5_filename',fullfile(folder_name,[file_name,'_nr.h5']));
-            [M,shifts,template] = normcorre_batch(fullname,options_nonrigid,template); 
+            [M,shifts,template] = normcorre_batch(files(i).name,options_nonrigid,template); 
             save(fullfile(folder_name,[file_name,'_shifts_nr.mat']),'shifts','-v7.3');           % save shifts of each file at the respective subfolder
         else    % perform rigid motion correction (faster, could be less accurate)
             options_rigid = NoRMCorreSetParms('d1',FOV(1),'d2',FOV(2),'bin_width',100,'max_shift',32,...
                 'output_type','h5','h5_filename',fullfile(folder_name,[file_name,'_rig.h5']));
-            [M,shifts,template] = normcorre_batch(fullname,options_rigid,template); 
+            [M,shifts,template] = normcorre_batch(files(i).name,options_rigid,template); 
             save(fullfile(folder_name,[file_name,'_shifts_rig.mat']),'shifts','-v7.3');           % save shifts of each file at the respective subfolder
         end
     else    % if files are already motion corrected convert them to h5
@@ -50,8 +42,8 @@ else
     h5_files = subdir(fullfile(foldername,'*_mc.h5'));
 end
     
-fr = 30;                                         % frame rate
-tsub = 5;                                        % degree of downsampling (for 30Hz imaging rate you can try also larger, e.g. 8-10)
+fr = floor(header.fps);                                         % frame rate
+tsub = 10;                                        % degree of downsampling (for 30Hz imaging rate you can try also larger, e.g. 8-10)
 ds_filename = [foldername,'/ds_data.mat'];
 data_type = class(read_file(h5_files(1).name,1,1));
 data = matfile(ds_filename,'Writable',true);
@@ -98,9 +90,9 @@ patch_size = [40,40];                   % size of each patch along each dimensio
 overlap = [8,8];                        % amount of overlap in each dimension (optional, default: [4,4])
 
 patches = construct_patches(sizY(1:end-1),patch_size,overlap);
-K = 7;                                            % number of components to be found
+K = 50;                                            % number of components to be found
 tau = 8;                                          % std of gaussian kernel (size of neuron) 
-p = 0;                                            % order of autoregressive system (p = 0 no dynamics, p=1 just decay, p = 2, both rise and decay)
+p = 1;                                            % order of autoregressive system (p = 0 no dynamics, p=1 just decay, p = 2, both rise and decay)
 merge_thr = 0.8;                                  % merging threshold
 sizY = data.sizY;
 
@@ -133,12 +125,14 @@ Cn = correlation_image_max(single(data.Y),8);
 
 %% run GUI for modifying component selection (optional, close twice to save values)
 run_GUI = true;
+disp('Select the wanted cells. Close GUI to continue.')
 if run_GUI
     Coor = plot_contours(A,Cn,options,1); close;
     GUIout = ROI_GUI(A,options,Cn,Coor,keep,ROIvars);   
     options = GUIout{2};
     keep = GUIout{3};    
 end
+disp('Moving onwards.')
 
 %% view contour plots of selected and rejected components (optional)
 throw = ~keep;
