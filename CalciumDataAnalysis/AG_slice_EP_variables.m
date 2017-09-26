@@ -16,6 +16,7 @@ samplesPerFrame = ceil(sampleRate / compiled.fps);
 for iEX=1:numel(compiled)    
     if (~isempty(compiled(iEX).stimVector)) && (~isempty(compiled(iEX).S_or))
         %% Separate the two types of stimuli
+        sampleLength = size(compiled(iEX).stimVector, 1);
         stimVec = zeros(size(compiled(iEX).stimVector));      
         juxtaVec = zeros(size(compiled(iEX).stimVector));
         
@@ -36,6 +37,8 @@ for iEX=1:numel(compiled)
         for idx = locsJuxta'
            juxtaVec(idx:idx + (responseWindow + stimTotalTime) * sampleRate) = 1; 
         end
+        stimVec = stimVec(1:sampleLength);
+        juxtaVec = juxtaVec(1:sampleLength);
         
         %% Find the frames in which a stimuli occurred (the actual loop comes later)
         frameStartTimes = floor(imgHeader(iEX).frameTimestamps_sec(1:2:end) * sampleRate);  % Assuming two data channels only
