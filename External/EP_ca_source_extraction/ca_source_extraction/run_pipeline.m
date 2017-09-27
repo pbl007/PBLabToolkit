@@ -1,3 +1,4 @@
+% complete pipeline for calcium imaging data pre-processing
 gcp;        % start a parallel engine
 
 %% motion correct (and save registered h5 files as 2d matrices (to be used in the end)..)
@@ -5,7 +6,7 @@ gcp;        % start a parallel engine
 % initialize template of file n + 1; 
 
 motion_correct = true;      % perform motion correction
-non_rigid = false;           % flag for non-rigid motion correction
+non_rigid = true;           % flag for non-rigid motion correction
 
 template = [];
 for i = 1:numFiles
@@ -41,8 +42,8 @@ else
     h5_files = subdir(fullfile(foldername,'*_mc.h5'));
 end
     
-fr = 30;                                         % frame rate
-tsub = 5;                                        % degree of downsampling (for 30Hz imaging rate you can try also larger, e.g. 8-10)
+fr = floor(header.fps);                                         % frame rate
+tsub = 10;                                        % degree of downsampling (for 30Hz imaging rate you can try also larger, e.g. 8-10)
 ds_filename = [foldername,'/ds_data.mat'];
 data_type = class(read_file(h5_files(1).name,1,1));
 data = matfile(ds_filename,'Writable',true);
@@ -85,13 +86,13 @@ data.F_dark = F_dark;
 %% now run CNMF on patches on the downsampled file, set parameters first
 
 sizY = data.sizY;                       % size of data matrix
-patch_size = [32,32];                   % size of each patch along each dimension (optional, default: [32,32])
-overlap = [4,4];                        % amount of overlap in each dimension (optional, default: [4,4])
+patch_size = [40,40];                   % size of each patch along each dimension (optional, default: [32,32])
+overlap = [8,8];                        % amount of overlap in each dimension (optional, default: [4,4])
 
 patches = construct_patches(sizY(1:end-1),patch_size,overlap);
-K = 10;                                            % number of components to be found
-tau = 10;                                          % std of gaussian kernel (size of neuron) 
-p = 0;                                            % order of autoregressive system (p = 0 no dynamics, p=1 just decay, p = 2, both rise and decay)
+K = 50;                                            % number of components to be found
+tau = 8;                                          % std of gaussian kernel (size of neuron) 
+p = 1;                                            % order of autoregressive system (p = 0 no dynamics, p=1 just decay, p = 2, both rise and decay)
 merge_thr = 0.8;                                  % merging threshold
 sizY = data.sizY;
 
@@ -120,18 +121,18 @@ options = CNMFSetParms(...
 Cn = correlation_image_max(single(data.Y),8);
 
 %% classify components
-[ROIvars.rval_space,ROIvars.rval_time,ROIvars.max_pr,ROIvars.sizeA,keep] = classify_components(data,A,C,b,f,YrA,options);
+[ROIvars.rval_space,ROIvars.rval_time,ROIvars.max_pr,ROIvars.sizeA,keep] = classify_components(data.Y,A,C,b,f,YrA,options);
 
 %% run GUI for modifying component selection (optional, close twice to save values)
 run_GUI = true;
+disp('Select the wanted cells. Close GUI to continue.')
 if run_GUI
-    fprintf('Modify components. Close GUI to continue. ');
     Coor = plot_contours(A,Cn,options,1); close;
     GUIout = ROI_GUI(A,options,Cn,Coor,keep,ROIvars);   
     options = GUIout{2};
     keep = GUIout{3};    
-    fprintf('Moving onward.\n');
 end
+disp('Moving onwards.')
 
 %% view contour plots of selected and rejected components (optional)
 throw = ~keep;
@@ -170,14 +171,13 @@ for i = 1:numFiles
     b_us{i} = max(mm_fun(f_us{i},h5_files(i).name) - A_keep*(C_us{i}*f_us{i}'),0)/norm(f_us{i})^2;
 end
 
-window_size = 20;
-prctfun = @(data) prctfilt(data,10,window_size,300);       % first detrend fluorescence (remove 20%th percentile on a rolling 1000 timestep window)
+prctfun = @(data) prctfilt(data,30,1000,300);       % first detrend fluorescence (remove 20th percentile on a rolling 1000 timestep window)
 F_us = cellfun(@plus,C_us,YrA_us,'un',0);           % cell array for projected fluorescence
 Fd_us = cellfun(prctfun,F_us,'un',0);               % detrended fluorescence
 
 Ab_d = cell(numFiles,1);                            % now extract projected background fluorescence
 for i = 1:numFiles
-    Ab_d{i} = prctfilt((bsxfun(@times, A_keep, 1./sum(A_keep.^2))'*b_us{i})*f_us{i},30,window_size,300,0);
+    Ab_d{i} = prctfilt((bsxfun(@times, A_keep, 1./sum(A_keep.^2))'*b_us{i})*f_us{i},30,1000,300,0);
 end
     
 F0 = cellfun(@plus, cellfun(@(x,y) x-y,F_us,Fd_us,'un',0), Ab_d,'un',0);   % add and get F0 fluorescence for each component

@@ -29,6 +29,8 @@ Names = [
     'save_memory        ' % process data sequentially to save memory (default: 0)
     'chunkSiz           ' % filter this number of timesteps each time (default: 100)
     'windowSiz          ' % size of window over which is computed sequentially (default: 32 x 32)
+    'rolling_sum        ' % flag for using rolling sum to detect new components (default: True)
+    'rolling_length     ' % length of rolling window (default: 100)
     % sparse_NMF parameters (sparse_NMF_initialization.m)
     'snmf_max_iter      ' % max # of sparse NMF iterations
     'err_thr            ' % relative change threshold for stopping sparse_NMF
@@ -118,6 +120,11 @@ Names = [
     'gnb                ' % number of global background components (default: 1)
     'create_memmap      ' % create a memory mapped file if it is not provided in the input (default: false)    
     'classify_comp      ' % classify components based on correlation values (default: true)
+    'refine_flag        ' % refine components within patch processing after merging (default: true)    
+    'patch_space_thresh ' % space correlation threshold within patch (default: 0.3)
+    'patch_time_thresh  ' % time correlation threshold within patch (default: 0.4)
+    'patch_max_fit      ' % maximum fitness threshold within patch (default: -20)
+    'patch_max_fit_delta' % maximum fitness_delta threshold within patch (default: -20)
     % parameters for microendoscope 
     'min_pnr            '
     'seed_method        '    
@@ -138,9 +145,12 @@ Names = [
     'dist_thr           ' % distance threshold above which dist = Inf (default: 0.5)
     'dist_maxthr        ' % max thresholding for components before turing into binary masks (default: 0.15)
     'dist_overlap_thr   ' % threshold for detecting if one ROI is a subset of another (deafult: 0.8)
+    % parameters for computing event exceptionality (compute_event_exceptionality.m)
+    'min_fitness        ' % threshold on time variability
+    'min_fitness_delta  ' % threshold on the derivative of time variability
     ];
 
-[m,n] = size(Names);
+[m,~] = size(Names);
 names = lower(Names);
 
 % Combine all leading options structures o1, o2, ... in l1Set(o1,o2,...).
@@ -240,6 +250,8 @@ Values = [
     {0}
     {100}
     {[32,32]}
+    {true}
+    {100}
     % sparse_NMF parameters (sparse_NMF_initialization.m)
     {100}
     {1e-4}
@@ -316,11 +328,11 @@ Values = [
     % CLASSIFY COMPONENTS PIXELS (classify_components_pixels.m)
     {0.8}
     % CLASSIFY COMPONENTS with CORRELATION (classify_comp_corr.m)
-    {0.4}
-    {0.4}
+    {0.35}
+    {0.35}
     {0.1}
-    {20}
-    {-2:6}
+    {10}
+    {-2:7}
     {10}
     % ORDER COMPONENTS (order_components.m)
     {3}
@@ -329,6 +341,11 @@ Values = [
     {1}
     {false}    
     {true}
+    {true}
+    {0.3}
+    {0.4}
+    {-20}
+    {-20}
     % parameters for microendoscope
     {10}
     {'auto'}
@@ -349,6 +366,9 @@ Values = [
     {0.5}
     {0.15}
     {0.8}
+    % parameters for computing event exceptionality (compute_event_exceptionality.m)
+    {-15}
+    {-5}
     ];
 
 for j = 1:m

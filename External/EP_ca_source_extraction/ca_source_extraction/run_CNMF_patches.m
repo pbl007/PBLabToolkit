@@ -104,6 +104,7 @@ if memmaped
         patch_idx = patch_to_indices(patches{i});
         Yp = data.Y(patch_idx{:},:);
         RESULTS(i) = process_patch(Yp,F_dark, K, p, tau, options);
+        % fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
     end
 
 else  % avoid copying the entire dataset to each worker, for in-memory data
@@ -115,6 +116,7 @@ else  % avoid copying the entire dataset to each worker, for in-memory data
     for i = 1:n_patches
         [idx, value] = fetchNext(future_results);
         RESULTS(idx) = value;
+        % fprintf(['Finished processing patch # ',num2str(i),' out of ',num2str(n_patches), '.\n']);
     end
 end
 
@@ -215,10 +217,10 @@ fprintf(' done. \n');
 
 %% compute spatial and temporal background using a rank-1 fit
 fprintf('Computing background components...')
-fin = [mean(F);rand(options.gnb-1,length(F))];
+fin = [mean(F,1);rand(options.gnb-1,size(F,2))];
 for iter = 1:150
     fin = diag(sqrt(sum(fin.^2,2)))\fin;
-    bin = max(B*(F*fin')/(fin*fin'),0);
+    bin = full(max(B*(F*fin')/(fin*fin'),0));
     fin = max((bin'*bin)\(bin'*B)*F,0);
 end
 fprintf(' done. \n');
@@ -227,9 +229,8 @@ fprintf(' done. \n');
 options.classify_comp = false; % components are now classified within each patch
 if options.classify_comp
     fprintf('Classifying components...')
-    options.space_thresh = 0.3;
-    options.time_thresh = 0.3;
-    options.max_pr_thr = 0.75;
+    options.space_thresh = options.patch_space_thresh;
+    options.time_thresh = options.patch_time_thresh;
     if ~memmaped
         [rval_space,rval_time,ind_space,ind_time] = classify_comp_corr(Y,Am,Cm,bin,fin,options);
     else
@@ -251,20 +252,30 @@ Pm.rval_time = rval_time;
 Pm.A_throw = Am(:,~ind);
 Pm.C_throw = Cm(~ind,:);
 
-%% update spatial components
-fprintf('Updating spatial components...');
-options.nb = options.gnb;
-if ~isfield(Pm,'mis_values'); Pm.mis_values = []; end
-if ~isfield(Pm,'mis_entries'); Pm.mis_entries = []; end
-[A,b,C,Pm] = update_spatial_components(data,C,fin,[A,bin],Pm,options);
-fprintf(' done. \n');
+%% update again before screening
+if options.refine_flag
+    % update spatial components
+    fprintf('Updating spatial components...');
+    options.nb = options.gnb;
+    if ~isfield(Pm,'mis_values'); Pm.mis_values = []; end
+    if ~isfield(Pm,'mis_entries'); Pm.mis_entries = []; end
+    [A,b,C,Pm] = update_spatial_components(data,C,fin,[A,bin],Pm,options);
+    fprintf(' done. \n');
 
-%% update temporal components
-fprintf('Updating temporal components... ')
-Pm.p = 0;
-[C,f,P,S,YrA] = update_temporal_components_fast(data,A,b,C,fin,Pm,options);
-fprintf(' done. \n');
-
+    % update temporal components
+    fprintf('Updating temporal components... ')
+    Pm.p = 0;
+    [C,f,P,S,YrA] = update_temporal_components_fast(data,A,b,C,fin,Pm,options);
+    fprintf(' done. \n');
+else
+    b = bin;
+    f = fin;
+    AY = mm_fun([A,double(b)],data);
+    AA = [A,double(b)]'*[A,double(b)];
+    YrA = bsxfun(@times, 1./sum([A,double(b)].^2)',AY - AA*[C;f]);
+    YrA = YrA(1:size(C,1),:);
+end
+P.p = p;
 end
 
 function idx = patch_to_indices(patch)
@@ -295,10 +306,9 @@ function result = process_patch(Y, F_dark, K, p, tau, options)
     options.nb = 1;
     options.temporal_parallel = 0;  % turn off parallel updating for temporal components
     options.spatial_parallel = 0;  % turn off parallel updating for spatial components
-    options.space_thresh = 0.3;
-    options.time_thresh = 0.3;
-    options.max_pr_thr = 0.75;  
-    
+    options.space_thresh = options.patch_space_thresh;    % put a low acceptance threshold initially
+    options.time_thresh = options.patch_time_thresh;
+
     Y = double(Y - F_dark);
     Y(isnan(Y)) = F_dark;
 
@@ -308,27 +318,30 @@ function result = process_patch(Y, F_dark, K, p, tau, options)
     [Ain,Cin,bin,fin] = initialize_components(Y,K,tau,options,P);
     [A,b,Cin,P] = update_spatial_components(Yr,Cin,fin,[Ain,bin],P,options);
     P.p = 0;
-    [C,f,P,S] = update_temporal_components(Yr,A,b,Cin,fin,P,options);
+    [C,f,P,S,YrA] = update_temporal_components(Yr,A,b,Cin,fin,P,options);
 
     if ~isempty(A) && ~isempty(C)
         [Am,Cm,~,~,P] = merge_components(Yr,A,b,C,f,P,S,options);
         [A,b,Cm,P] = update_spatial_components(Yr,Cm,f,[Am,b],P,options);
         P.p = p;
-        [C,f,P,S] = update_temporal_components(Yr,A,b,Cm,f,P,options);
-        [rval_space,rval_time,ind_space,ind_time] = classify_comp_corr(Y,A,C,b,f,options);
-        ind = ind_space & ind_time;
+        [C,f,P,S,YrA] = update_temporal_components(Yr,A,b,Cm,f,P,options);
+        [rval_space,rval_time,ind_space,ind_time] = classify_comp_corr(Y,A,C,b,f,options);ind = ind_space & ind_time;        
+        fitness = compute_event_exceptionality(C+YrA,0);
+        fitness_delta = compute_event_exceptionality(diff(C+YrA,[],2),0);
+        ind = (ind_space & ind_time) | (fitness < options.patch_max_fit) | (fitness_delta < options.patch_max_fit_delta);
         P.rval_space = rval_space;
         P.rval_time = rval_time;
         P.ind_space = ind_space;
         P.ind_time = ind_time;
+        P.fitness = fitness;
+        P.fitness_delta = fitness_delta;
         P.A_throw = A(:,~ind);
         P.C_throw = C(~ind,:);
-    end    
+    end
     result.A = A(:,ind);
     result.b = b;
     result.C = C(ind,:);
     result.f = f;
     result.S = S;
-    result.P = P;  
-
+    result.P = P;
 end
