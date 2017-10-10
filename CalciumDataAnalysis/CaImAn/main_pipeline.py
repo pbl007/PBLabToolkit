@@ -32,6 +32,7 @@ from caiman.source_extraction.cnmf.online_cnmf import bare_initialization
 from copy import deepcopy
 from helper_funcs import load_object, save_object
 from find_files_to_parse import FileFinder
+from os import sep
 
 
 # # %%  download and list all files to be processed
@@ -49,7 +50,7 @@ from find_files_to_parse import FileFinder
 finder = FileFinder()
 fls = finder.find_files()
 folder_name = finder.parent_folder
-print("Files to be parsed:\n")
+print("Files to be parsed:")
 print(fls)  # your list of files should look something like this
 
 # %%   Set up some parameters
@@ -81,6 +82,8 @@ if ds_factor > 1:  # load only the first initbatch frames and possibly downsampl
     Y = cm.load(fls[0], subindices=slice(channel_of_neurons, initbatch, num_of_channels)).astype(np.float32).resize(1. / ds_factor, 1. / ds_factor)
 else:
     Y = cm.load(fls[0], subindices=slice(channel_of_neurons, initbatch, num_of_channels)).astype(np.float32)
+
+metadata = Y.meta_data
 
 if mot_corr:  # perform motion correction on the first initbatch frames
     mc = Y.motion_correct(max_shift, max_shift)
@@ -147,8 +150,8 @@ Cn = Cn_init.copy()
 plot_contours_flag = False  # flag for plotting contours of detected components at the end of each file
 play_reconstr = True  # flag for showing video with results online (turn off flags for improving speed)
 save_movie = False  # flag for saving movie (file could be quite large..)
-movie_name = str(finder.parent_folder) + '/output.avi'  # name of movie to be saved
-resize_fact = 1.2  # image resizing factor
+movie_name = str(finder.parent_folder) + sep + 'output.avi'  # name of movie to be saved
+resize_fact = 1  # image resizing factor
 
 if online_files == 0:  # check whether there are any additional files
     process_files = fls[init_files-1]  # end processing at this file
@@ -274,8 +277,8 @@ b_trace = [osi.b for osi in cnm2.OASISinstances]
 save_results = True
 
 if save_results:
-    np.savez(str(finder.parent_folder) + 'results_analysis_online_MOT_CORR.npz',
-             Cn=Cn, Ab=A, Cf=C, b=b, f=f,
+    np.savez(str(finder.parent_folder) + sep + 'results_onACID_' + fls[0].split(sep)[-1][:-4] + '.npz',
+             Cn=Cn, Ab=A, Cf=C, b=b, f=f, metadata=metadata,
              dims=cnm2.dims, tottime=tottime, noisyC=noisyC, shifts=shifts)
 
 pl.figure()
