@@ -18,23 +18,20 @@ try:
 except NameError:
     print('Not IPYTHON')
     pass
-
+import matplotlib
+matplotlib.use('TkAgg')
 from time import time
 import caiman as cm
-from caiman.source_extraction import cnmf as cnmf
 from caiman.utils.visualization import view_patches_bar
-from caiman.utils.utils import download_demo
 import pylab as pl
 import scipy
 from caiman.motion_correction import motion_correct_iteration_fast
 import cv2
 from caiman.utils.visualization import plot_contours
-import glob
-from caiman.source_extraction.cnmf.online_cnmf import bare_initialization, initialize_movie_online, RingBuffer
+from caiman.source_extraction.cnmf.online_cnmf import bare_initialization
 from copy import deepcopy
 from helper_funcs import load_object, save_object
 from find_files_to_parse import FileFinder
-from preprocess_stacks import GenerateInitFile
 
 
 # # %%  download and list all files to be processed
@@ -52,7 +49,6 @@ from preprocess_stacks import GenerateInitFile
 finder = FileFinder()
 fls = finder.find_files()
 folder_name = finder.parent_folder
-# file_handler = GenerateInitFile(files=fls_before_init, num_of_channels=1, channel_of_neurons=1)
 print("Files to be parsed:\n")
 print(fls)  # your list of files should look something like this
 
@@ -64,8 +60,8 @@ init_files = 1  # number of files used for initialization
 online_files = len(fls) - 1  # number of files used for online
 initbatch = 200 # number of frames for initialization (presumably from the first file)
 expected_comps = 200  # maximum number of expected components used for memory pre-allocation (exaggerate here)
-K = 2  # initial number of components
-gSig = tuple(np.ceil(np.array([10, 10]) / ds_factor))  # expected half size of neurons
+K = 4  # initial number of components
+gSig = tuple(np.ceil(np.array([6, 6]) / ds_factor))  # expected half size of neurons
 p = 1  # order of AR indicator dynamics
 rval_thr = 0.85  # correlation threshold for new component inclusion
 thresh_fitness_delta = -30  # event exceptionality thresholds
@@ -151,7 +147,7 @@ Cn = Cn_init.copy()
 plot_contours_flag = False  # flag for plotting contours of detected components at the end of each file
 play_reconstr = True  # flag for showing video with results online (turn off flags for improving speed)
 save_movie = False  # flag for saving movie (file could be quite large..)
-movie_name = str(folder_name) + '/output.avi'  # name of movie to be saved
+movie_name = str(finder.parent_folder) + '/output.avi'  # name of movie to be saved
 resize_fact = 1.2  # image resizing factor
 
 if online_files == 0:  # check whether there are any additional files
@@ -267,19 +263,20 @@ for iter in range(epochs):
 if save_movie:
     out.release()
 cv2.destroyAllWindows()
-# %%  save results (optional)
-save_results = False
-
-if save_results:
-    np.savez('results_analysis_online_MOT_CORR.npz',
-             Cn=Cn, Ab=cnm2.Ab, Cf=cnm2.C_on, b=cnm2.b, f=cnm2.f,
-             dims=cnm2.dims, tottime=tottime, noisyC=cnm2.noisyC, shifts=shifts)
 
 # %% extract results from the objects and do some plotting
 A, b = cnm2.Ab[:, cnm2.gnb:], cnm2.Ab[:, :cnm2.gnb].toarray()
 C, f = cnm2.C_on[cnm2.gnb:cnm2.M, t - t // epochs:t], cnm2.C_on[:cnm2.gnb, t - t // epochs:t]
 noisyC = cnm2.noisyC[:, t - t // epochs:t]
 b_trace = [osi.b for osi in cnm2.OASISinstances]
+
+# %%  save results (optional)
+save_results = True
+
+if save_results:
+    np.savez(str(finder.parent_folder) + 'results_analysis_online_MOT_CORR.npz',
+             Cn=Cn, Ab=A, Cf=C, b=b, f=f,
+             dims=cnm2.dims, tottime=tottime, noisyC=noisyC, shifts=shifts)
 
 pl.figure()
 crd = cm.utils.visualization.plot_contours(A, Cn, thr=0.9)

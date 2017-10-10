@@ -31,5 +31,8 @@ class FileFinder(object):
         files = tkFileDialog.askopenfilenames(parent=root, title='Choose files to parse (same FOV)',
                                               filetypes=[('Tif files', '*.tif'), ('HDF5 files', '*.h5')],
                                               initialdir=path)
+        if len(files) == 0:
+            raise UserWarning("No files chosen. Exiting.")
+
         self.parent_folder = Path(files[0]).parent.absolute()
         return files
