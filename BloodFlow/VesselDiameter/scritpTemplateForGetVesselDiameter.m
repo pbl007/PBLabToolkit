@@ -2,10 +2,15 @@
 clearvars;
 
 %% Addpaths
-addpath('/state/partition1/home/pblab/data/MatlabCode/PBLabToolkit/ScanImageUtils');
-addpath('/state/partition1/home/pblab/data/MatlabCode/ScanImage/SI2016bR0_2016-12-12_dd0af29383');
-addpath('/state/partition1/home/pblab/data/MatlabCode/PBLabToolkit/External/efficient_subpixel_registration');
-addpath(genpath('/state/partition1/home/pblab/data/MatlabCode/PBLabToolkit/External/chronux'));
+if startsWith(pwd, '/data')  % PBLab's server
+    prefix = '';
+else
+    prefix = '/state/partition1/home/pblab';
+end
+addpath([prefix, '/data/MatlabCode/PBLabToolkit/ScanImageUtils']);
+addpath([prefix, '/data/MatlabCode/ScanImage/SI2016bR0_2016-12-12_dd0af29383']);
+addpath([prefix, '/data/MatlabCode/PBLabToolkit/External/efficient_subpixel_registration']);
+addpath(genpath([prefix, '/data/MatlabCode/PBLabToolkit/External/chronux']));
 
 %% Script parameters
 fname = uipickfiles('Prompt', 'Please select one file for the vessel analysis',...
@@ -15,7 +20,7 @@ numOfChannels = 2;
 channelOfVessels = 2;
 expInfo.animal_ID='300';
 expInfo.FOV_ID='1';
-expInfo.nVessels = 4;
+expInfo.nVessels = 7;
 
 %% 
 fprintf('Opening file...\n');
