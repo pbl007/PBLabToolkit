@@ -16,4 +16,4 @@ is_multiscaler = False
 
 for file in all_files:
     main(filename=str(file), show_movie=False, h5group='/Full Stack/Channel 1',
-         is_multiscaler=is_multiscaler, num_of_channels=2)
+         is_multiscaler=is_multiscaler, num_of_channels=2, save_results=True)

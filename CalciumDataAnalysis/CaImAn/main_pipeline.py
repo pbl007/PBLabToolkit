@@ -10,12 +10,15 @@ for sharing their data used in this demo.
 import sys
 # if not any('External/CaImAn' in s for s in sys.path):
 sys.path.append(r'/state/partition1/home/pblab/data/MatlabCode/PBLabToolkit/External/CaImAn')
+sys.path.append(r'/data/MatlabCode/PBLabToolkit/External/CaImAn')
+sys.path.append(r'/export/home/pb/data/MatlabCode/PBLabToolkit/External/CaImAn')
 
 import matplotlib
 matplotlib.use('TkAgg')
 from time import time
 import caiman as cm
 from caiman.utils.visualization import view_patches_bar
+from caiman.source_extraction.cnmf.utilities import extract_DF_F
 import pylab as pl
 from pathlib2 import Path
 from caiman.motion_correction import motion_correct_iteration_fast
@@ -273,11 +276,11 @@ def main(filename=None, show_movie=True, h5group='mov', is_multiscaler=False, sa
 
     pl.figure()
     crd = cm.utils.visualization.plot_contours(A, Cn, thr=0.9)
-
+    Cdf = extract_DF_F(Yr=Y_.to_2D().T, A=A.tocsc(), C=C, bl=np.zeros((len(crd),)))
     # %%  save results (optional)
     if save_results:
         np.savez(str(folder_name) + sep + 'results_onACID_' + fls[0].split(sep)[-1][:-4] + '.npz',
-                 Cn=Cn, Ab=A, Cf=C, b=b, f=f, metadata=metadata, crd=crd,
+                 Cn=Cn, Ab=A, Cf=Cdf, b=b, f=f, metadata=metadata, crd=crd,
                  dims=cnm2.dims, tottime=tottime, noisyC=noisyC, shifts=shifts)
 
     # view_patches_bar(Yr, scipy.sparse.coo_matrix(A.tocsc()[:, :]), C[:, :], b, f,
@@ -285,5 +288,5 @@ def main(filename=None, show_movie=True, h5group='mov', is_multiscaler=False, sa
 
 
 if __name__ == '__main__':
-    main(show_movie=True, h5group='/Full Stack/Channel 1', is_multiscaler=True,
-         save_results=True, num_of_channels=2, epochs=2)
+    main(show_movie=False, h5group='/Full Stack/Channel 1', is_multiscaler=True,
+         save_results=True, num_of_channels=1, epochs=2)

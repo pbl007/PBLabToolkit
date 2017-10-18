@@ -20,7 +20,7 @@ numOfChannels = 2;
 channelOfVessels = 2;
 expInfo.animal_ID='300';
 expInfo.FOV_ID='1';
-expInfo.nVessels = 7;
+expInfo.nVessels = 4;
 
 %% 
 fprintf('Opening file...\n');
